@@ -1,0 +1,50 @@
+import argparse
+
+from assistant.assistant import Assistant
+
+
+def list_mics() -> None:
+    import speech_recognition as sr
+
+    names = sr.Microphone.list_microphone_names()
+    if not names:
+        print("Nenhum microfone foi detectado pelo Windows.")
+        return
+    print("Microfones detectados (use o índice com --mic-index):")
+    for i, name in enumerate(names):
+        print(f"  {i}: {name}")
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(description="Alexa - Assistente Virtual em Python")
+    parser.add_argument(
+        "--text-mode",
+        action="store_true",
+        help="Usa entrada de texto no terminal em vez do microfone "
+        "(fallback para demonstração sem áudio/internet).",
+    )
+    parser.add_argument(
+        "--mic-index",
+        type=int,
+        default=None,
+        help="Força o uso de um microfone específico pelo índice "
+        "(veja os índices disponíveis com --list-mics), caso o dispositivo "
+        "padrão do Windows não seja o microfone correto.",
+    )
+    parser.add_argument(
+        "--list-mics",
+        action="store_true",
+        help="Lista os microfones detectados pelo Windows e sai, sem iniciar a assistente.",
+    )
+    args = parser.parse_args()
+
+    if args.list_mics:
+        list_mics()
+        return
+
+    assistant = Assistant(text_mode=args.text_mode, mic_index=args.mic_index)
+    assistant.run()
+
+
+if __name__ == "__main__":
+    main()

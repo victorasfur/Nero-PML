@@ -1,0 +1,33 @@
+# Reconhecimento de voz (STT) via Google Web Speech API
+SpeechRecognition==3.10.4
+
+# Captura de áudio do microfone (dependência do SpeechRecognition).
+# No Windows, se "pip install" falhar, use: pip install pipwin && pipwin install pyaudio
+PyAudio==0.2.14
+
+# Síntese de voz (TTS) offline via SAPI5 do Windows
+pyttsx3==2.90
+
+# Reconhecimento facial (Haar Cascade + LBPH) e captura de webcam
+opencv-contrib-python==4.10.0.84
+
+# Suporte numérico usado pelo treinamento do LBPH
+numpy==1.26.4
+
+# Chamadas HTTP (clima, câmbio)
+requests==2.32.3
+
+# Leitura da chave da API do Gemini a partir do .env
+python-dotenv==1.0.1
+
+# Integração com IA generativa (Google Gemini)
+google-generativeai==0.8.3
+
+# Captura de screenshot (PIL.ImageGrab)
+Pillow==10.4.0
+
+# Cores no terminal (compatibilidade com o console do Windows)
+colorama==0.4.6
+
+# Testes automatizados
+pytest==8.3.3
