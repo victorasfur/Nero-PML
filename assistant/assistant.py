@@ -5,15 +5,22 @@ executado antes da palavra de ativação "Alexa".
                                         |
                                         +--> WAITING_AGENDA_EVENT --evento--> WAITING_WAKE_WORD
                                         +--> WAITING_CONFIRMATION_CLEAR_AGENDA --sim/não--> WAITING_WAKE_WORD
+                                        +--> WAITING_CONFIRM_INTENT --sim/não--> WAITING_WAKE_WORD
 
 Se "Alexa" e o comando vierem na mesma fala ("Alexa, que horas são?"), o
 restante da frase é executado imediatamente após a wake word ser detectada.
+
+WAITING_CONFIRM_INTENT existe porque intent_router.classify() pode ter
+confiança média num palpite (fuzzy matching) — nesse caso o comando NÃO é
+executado direto; a assistente pergunta "você quis dizer X?" e só executa
+depois de uma confirmação explícita (ver commands.dispatch / CONFIDENCE_*).
 """
 
 from colorama import Fore, Style
 from colorama import init as colorama_init
 
 from . import agenda, commands
+from .intents import Intent
 from .speech import InputClosed, SpeechEngine
 from .state_machine import AssistantState, StateMachine
 from .text_normalizer import detect_wake_word, normalize_text
@@ -42,6 +49,8 @@ class Assistant:
         agenda.ensure_agenda_file()
         self.speech = SpeechEngine(text_mode=text_mode, mic_index=mic_index)
         self.sm = StateMachine()
+        self._pending_match = None
+        self._pending_raw_text = None
 
     def run(self) -> None:
         print_banner()
@@ -80,7 +89,9 @@ class Assistant:
         elif state == AssistantState.WAITING_AGENDA_EVENT:
             self._handle_agenda_event(raw_text, normalized)
         elif state == AssistantState.WAITING_CONFIRMATION_CLEAR_AGENDA:
-            self._handle_confirmation(raw_text, normalized)
+            self._handle_clear_agenda_confirmation(raw_text, normalized)
+        elif state == AssistantState.WAITING_CONFIRM_INTENT:
+            self._handle_confirm_intent(raw_text, normalized)
 
     # -- estados -------------------------------------------------------
 
@@ -128,7 +139,7 @@ class Assistant:
         self.sm.transition(AssistantState.WAITING_WAKE_WORD)
         print_status("aguardando palavra de ativação...")
 
-    def _handle_confirmation(self, raw_text: str, normalized: str) -> None:
+    def _handle_clear_agenda_confirmation(self, raw_text: str, normalized: str) -> None:
         print_user(raw_text)
         tokens = set(normalized.split())
         yes_words = {"sim", "confirmo", "certo", "isso"}
@@ -146,23 +157,56 @@ class Assistant:
         else:
             self.speech.speak("Não entendi, pode responder sim ou não?")
 
+    def _handle_confirm_intent(self, raw_text: str, normalized: str) -> None:
+        print_user(raw_text)
+
+        if normalized in ("cancelar", "cancela"):
+            self._pending_match = None
+            self._pending_raw_text = None
+            self._cancel("Tudo bem, operação cancelada.")
+            return
+
+        tokens = set(normalized.split())
+        yes_words = {"sim", "confirmo", "certo", "isso"}
+        no_words = {"nao", "negativo"}
+
+        if tokens & yes_words:
+            match = self._pending_match
+            self._pending_match = None
+            self._pending_raw_text = None
+            result = commands.execute(match.intent, match.params, normalized, raw_text)
+            self._apply_result(result)
+        elif tokens & no_words:
+            pending_raw = self._pending_raw_text
+            self._pending_match = None
+            self._pending_raw_text = None
+            result = commands.execute(Intent.ASK_AI, {}, normalized, pending_raw)
+            self._apply_result(result)
+        else:
+            self.speech.speak("Não entendi, pode responder sim ou não?")
+
     # -- utilidades ---------------------------------------------------
 
     def _execute_command(self, normalized: str, raw_text: str) -> None:
         result = commands.dispatch(normalized, raw_text)
+        self._apply_result(result)
 
+    def _apply_result(self, result) -> None:
         if result.speak:
             self.speech.speak(result.speak)
         if result.speak_lines:
             for line in result.speak_lines:
                 self.speech.speak(line)
 
+        self._pending_match = result.pending_match
+        self._pending_raw_text = result.pending_raw_text
         self.sm.transition(result.next_state)
 
         status_by_state = {
             AssistantState.WAITING_WAKE_WORD: "aguardando palavra de ativação...",
             AssistantState.WAITING_AGENDA_EVENT: "aguardando descrição do evento...",
             AssistantState.WAITING_CONFIRMATION_CLEAR_AGENDA: "aguardando confirmação (sim/não)...",
+            AssistantState.WAITING_CONFIRM_INTENT: "aguardando confirmação da intenção (sim/não)...",
         }
         print_status(status_by_state[result.next_state])
 

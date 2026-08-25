@@ -78,7 +78,9 @@ def calculate(expression: str) -> Tuple[Optional[float], Optional[str]]:
 
     left_tokens = tokens[:op_index]
     right_tokens = tokens[op_index + 1:]
-    if right_tokens and right_tokens[0] == "por":  # "multiplicado por" / "dividido por"
+    # filler depois do operador: "multiplicado POR", "dividido POR",
+    # "somado COM", "subtraido DE"
+    if right_tokens and right_tokens[0] in ("por", "com", "de"):
         right_tokens = right_tokens[1:]
 
     num1 = _parse_trailing_number(left_tokens)

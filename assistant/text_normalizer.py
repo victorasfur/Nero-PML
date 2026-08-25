@@ -7,12 +7,21 @@ from config import settings
 
 
 def normalize_text(text: str) -> str:
-    """minusculas, sem acento, sem pontuação, espaços colapsados."""
+    """minusculas, sem acento, sem pontuação, espaços colapsados.
+
+    Símbolos matemáticos (usados sobretudo em --text-mode, ex.: "10 + 20")
+    viram palavras ANTES da pontuação ser removida, para a calculadora
+    conseguir interpretá-los como "10 mais 20".
+    """
     if not text:
         return ""
     text = text.strip().lower()
     text = unicodedata.normalize("NFKD", text)
     text = "".join(c for c in text if not unicodedata.combining(c))
+    text = text.replace("+", " mais ")
+    text = text.replace("*", " vezes ")
+    text = text.replace("/", " dividido por ")
+    text = re.sub(r"(?<=\d)\s*-\s*(?=\d)", " menos ", text)
     text = re.sub(r"[^a-z0-9\s]", " ", text)
     text = re.sub(r"\s+", " ", text).strip()
     return text

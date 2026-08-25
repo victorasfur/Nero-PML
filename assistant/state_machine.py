@@ -7,6 +7,7 @@ class AssistantState(Enum):
     WAITING_COMMAND = auto()
     WAITING_AGENDA_EVENT = auto()
     WAITING_CONFIRMATION_CLEAR_AGENDA = auto()
+    WAITING_CONFIRM_INTENT = auto()
 
 
 class StateMachine:

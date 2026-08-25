@@ -34,7 +34,10 @@ COMMAND_TIMEOUT_SECONDS = 12
 DEFAULT_CITY = "São Paulo"
 
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
-GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-2.0-flash")
+# O nome do modelo do Gemini muda com o tempo (a Google aposenta versões
+# antigas); se a API começar a responder "model ... is no longer available",
+# atualize o valor padrão abaixo ou defina GEMINI_MODEL no .env.
+GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-3.6-flash")
 
 # LBPH: quanto MENOR a confiança, melhor o match. Acima do limiar = "Desconhecido".
 LBPH_CONFIDENCE_THRESHOLD = 80

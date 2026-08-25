@@ -25,6 +25,7 @@ facial offline, integração com IA generativa e comandos utilitários extras
 | Volume | `ctypes` + teclas de mídia do Windows | Stdlib puro — evita os problemas de instalação e compatibilidade do `pycaw`/COM entre versões do Windows. |
 | Screenshot | `Pillow` (`ImageGrab`) | Já é dependência natural do projeto, sem lib extra. |
 | Terminal colorido | `colorama` | Compatibilidade de cores ANSI no console do Windows. |
+| Reconhecimento de intenção | `rapidfuzz` | MIT, mantido, wheel pré-compilada no Windows (sem compilador). Usado para tolerar variações naturais de fala ("qual a data de hoje" vs. "que dia é hoje") — ver seção 12. |
 
 ## 3. Pré-requisitos
 
@@ -81,11 +82,17 @@ https://aistudio.google.com/apikey):
 
 ```env
 GEMINI_API_KEY=sua_chave_aqui
-GEMINI_MODEL=gemini-2.0-flash
+GEMINI_MODEL=gemini-3.6-flash
 ```
 
 **Nunca** coloque a chave diretamente no código — `.env` já está no
 `.gitignore`.
+
+O nome do modelo do Gemini muda com o tempo (a Google aposenta versões
+antigas). Se a IA começar a responder "Desculpe, não consegui obter uma
+resposta..." e o terminal mostrar um erro `404 ... model ... is no longer
+available`, atualize `GEMINI_MODEL` no `.env` para o modelo sugerido na
+própria mensagem de erro.
 
 ## 8. Configuração do microfone
 
@@ -130,28 +137,47 @@ Modo texto (fallback sem microfone/internet, mesma lógica de comandos):
 python main.py --text-mode
 ```
 
-## 12. Lista de comandos
+## 12. Reconhecimento de intenção e lista de comandos
 
 Todos exigem a wake word "Alexa" antes (na mesma fala ou em falas separadas).
+A partir daí, a assistente **não exige uma frase exata** — ela reconhece a
+intenção por trás de várias formas naturais de pedir a mesma coisa (ver
+`assistant/intent_router.py`):
 
-| Comando de exemplo | Ação |
-|---|---|
-| Alexa cadastrar evento na agenda | Pergunta o evento e salva em `data/agenda.txt` |
-| Alexa ler agenda | Fala todos os eventos cadastrados |
-| Alexa limpar agenda | Pede confirmação (sim/não) e esvazia `agenda.txt` sem excluí-lo |
-| Alexa que horas são | Fala a hora atual do sistema |
-| Alexa que dia é hoje | Fala a data atual em português |
-| Alexa calcular 10 mais 20 | Soma (aceita mais/menos/vezes/dividido por, dígitos ou por extenso) |
-| Alexa reconhecer face / Alexa quem sou eu | Abre a webcam e identifica a pessoa |
-| Alexa qual a previsão do tempo para São Paulo | Consulta o clima (Open-Meteo) |
-| Alexa qual o valor do dólar hoje | Consulta a cotação (AwesomeAPI) |
-| Alexa quanto vale um bitcoin hoje | Consulta a cotação (AwesomeAPI) |
-| Alexa abrir YouTube | Abre o YouTube no navegador padrão |
-| Alexa pesquisar no YouTube vídeos sobre Python | Abre a busca no YouTube |
-| Alexa tirar um print da tela | Salva um screenshot com data/hora no nome |
-| Alexa aumentar/diminuir o volume | Ajusta o volume do sistema |
-| Alexa cancelar | Cancela o cadastro de evento/confirmação em andamento |
-| Qualquer outra pergunta | Encaminhada para a IA generativa (Gemini) |
+```
+STT → normalização → matchers estruturais (regex: calculadora, clima,
+      dólar, bitcoin, youtube, print, volume) → guard de discurso ("fale
+      sobre X" ≠ comando X) → fuzzy matching (rapidfuzz) contra frases de
+      referência → política de confiança:
+
+        confiança ≥ 0.80  → executa direto
+        0.60 ≤ conf < 0.80 → "Você quis dizer <X>? Sim ou não?"
+        confiança < 0.60  → encaminha para a IA (Gemini)
+```
+
+| Intenção | Exemplos que funcionam | Ação |
+|---|---|---|
+| `ADD_AGENDA` | "cadastrar evento na agenda", "quero colocar um compromisso na minha agenda", "marque um compromisso" | Pergunta o evento e salva em `data/agenda.txt` (a resposta seguinte NÃO precisa da wake word) |
+| `READ_AGENDA` | "ler agenda", "quais são meus eventos", "o que tenho na agenda" | Fala todos os eventos cadastrados |
+| `CLEAR_AGENDA` | "limpar agenda", "apague minha agenda", "remova tudo da agenda" | Pede confirmação (sim/não) e esvazia `agenda.txt` sem excluí-lo |
+| `GET_TIME` | "que horas são", "qual é a hora", "você sabe me dizer a hora atual" | Fala a hora atual do sistema |
+| `GET_DATE` | "que dia é hoje", "qual a data de hoje", "hoje é que dia" | Fala a data atual em português |
+| `CALCULATE` | "calcular 10 mais 20", "quanto é 10 + 20", "calcule 8 vezes 7", "100 dividido por 5" | Soma/subtrai/multiplica/divide (dígitos, símbolos ou por extenso) |
+| `FACE_RECOGNITION` | "reconhecer face", "quem sou eu", "identificar pessoa" | Abre a webcam e identifica a pessoa |
+| `WEATHER` | "previsão do tempo para São Paulo", "como está o tempo" | Consulta o clima (Open-Meteo) |
+| `DOLLAR` | "qual o valor do dólar hoje" | Consulta a cotação (AwesomeAPI) |
+| `BITCOIN` | "quanto vale um bitcoin hoje" | Consulta a cotação (AwesomeAPI) |
+| `OPEN_YOUTUBE` | "abrir YouTube" | Abre o YouTube no navegador padrão |
+| `YOUTUBE_SEARCH` | "pesquisar no YouTube vídeos sobre Python" | Abre a busca no YouTube |
+| `SCREENSHOT` | "tirar um print da tela" | Salva um screenshot com data/hora no nome |
+| `VOLUME_UP` / `VOLUME_DOWN` | "aumentar/diminuir o volume" | Ajusta o volume do sistema |
+| — | "cancelar" (em qualquer pergunta pendente) | Cancela o cadastro de evento/confirmação em andamento |
+| `ASK_AI` | qualquer outra pergunta ("explique o que é Python") | Encaminhada para a IA generativa (Gemini), sem a palavra "Alexa" |
+
+**Por que "fale sobre reconhecimento facial" não abre a câmera**: frases que
+falam *sobre* um assunto ("fale sobre", "explique", "o que é", "como
+funciona") são tratadas como pergunta, não como comando, e vão direto para a
+IA — mesmo que o assunto mencionado seja parecido com uma intenção real.
 
 ## 13. Estrutura do projeto
 
@@ -169,7 +195,9 @@ alexa-assistente/
 │   ├── assistant.py         # loop principal / máquina de estados
 │   ├── speech.py            # STT + TTS
 │   ├── text_normalizer.py   # normalização + wake word tolerante
-│   ├── commands.py          # registro/roteador de comandos
+│   ├── intents.py           # Enum Intent (GET_DATE, CALCULATE, ...)
+│   ├── intent_router.py     # classify(): texto -> IntentMatch (intenção+confiança+params)
+│   ├── commands.py          # command_registry: Intent -> handler + política de confiança
 │   ├── calculator.py        # parser seguro (sem eval)
 │   ├── agenda.py            # agenda.txt
 │   ├── datetime_utils.py
@@ -186,7 +214,8 @@ alexa-assistente/
 └── tests/
     ├── test_calculator.py
     ├── test_agenda.py
-    └── test_text_normalizer.py
+    ├── test_text_normalizer.py
+    └── test_intent_router.py
 ```
 
 ## 14. Solução de problemas
@@ -200,20 +229,34 @@ alexa-assistente/
 - **Reconhecimento de voz não entende nada**: confira o microfone padrão e
   a conexão com a internet (o STT usa a Google Web Speech API).
 - **API do Gemini falha**: confirme a chave em `.env`; a assistente responde
-  educadamente mesmo sem IA configurada.
+  educadamente mesmo sem IA configurada. Se o erro no terminal for `404 ...
+  model ... is no longer available`, o modelo configurado em `GEMINI_MODEL`
+  foi aposentado — troque pelo nome sugerido na própria mensagem de erro.
 - **Sem internet durante a apresentação**: rode com `--text-mode` para
   digitar os comandos e continuar demonstrando a máquina de estados e os
   comandos locais (agenda, hora, data, calculadora, reconhecimento facial).
 
 ## 15. Como adicionar novos comandos
 
-1. Escreva a função de tratamento em `assistant/commands.py` com a
-   assinatura `handler(match, normalized_text, raw_text) -> CommandResult`.
-2. Adicione uma entrada em `COMMANDS` com um `re.compile(...)` que identifique
-   a frase (usando `normalize_text` como referência: minúsculas, sem acento).
-3. Não é necessário tocar em `assistant.py` — o roteador (`commands.dispatch`)
-   já é chamado tanto para "Alexa, comando" na mesma fala quanto para
-   comandos ditos após a ativação.
+Handlers não sabem nada sobre COMO a intenção foi reconhecida — só recebem
+`(params, normalized_text, raw_text)`. Isso separa completamente reconhecimento
+(`intent_router.py`) de execução (`commands.py`).
+
+1. Adicione o novo valor em `assistant/intents.py` (`Intent`).
+2. Escreva `handle_minha_intencao(params, normalized, raw) -> CommandResult`
+   em `assistant/commands.py` e registre em `COMMAND_REGISTRY`.
+3. Ensine o `intent_router.py` a reconhecer a intenção:
+   - Se tem uma palavra-chave praticamente inequívoca e/ou precisa extrair
+     parâmetros (como clima/cidade, YouTube/busca): adicione um regex em
+     `_structural_match()`.
+   - Se varia muito de forma de falar (como data/hora/agenda): adicione uma
+     lista de frases de referência em `REFERENCE_PHRASES` — não precisa
+     cobrir toda variação possível, o fuzzy matching (rapidfuzz) tolera
+     pequenas diferenças de transcrição e reordenação de palavras.
+4. Não é necessário tocar em `assistant.py` — `commands.dispatch()` já é
+   chamado tanto para "Alexa, comando" na mesma fala quanto para comandos
+   ditos após a ativação, e já aplica a política de confiança (executar /
+   confirmar / encaminhar para IA).
 
 ## Testes
 
@@ -221,7 +264,12 @@ alexa-assistente/
 pytest
 ```
 
-Cobre a calculadora (as 4 operações, divisão por zero, números por extenso),
-a agenda (criação, escrita, leitura, múltiplos eventos, limpeza sem excluir
-o arquivo) e o normalizador de texto/wake word (incluindo o caso de falso
-positivo em "fui na loja da alexa").
+Cobre a calculadora (as 4 operações, divisão por zero, números por extenso,
+símbolos "+ - * /"), a agenda (criação, escrita, leitura, múltiplos eventos,
+limpeza sem excluir o arquivo), o normalizador de texto/wake word (incluindo
+o falso positivo em "fui na loja da alexa"), e o reconhecimento de intenção
+(`test_intent_router.py`): dezenas de variações naturais por intenção, o
+diálogo de exemplo completo executando sem pedir confirmação, extração de
+parâmetros (cidade, expressão de cálculo, busca do YouTube), e os três
+falsos positivos citados no enunciado ("conte uma história sobre um dia...",
+"explique como funciona uma agenda", "fale sobre reconhecimento facial").

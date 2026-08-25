@@ -29,5 +29,10 @@ Pillow==10.4.0
 # Cores no terminal (compatibilidade com o console do Windows)
 colorama==0.4.6
 
+# Fuzzy matching para o reconhecimento de intenção (tolera reordenação de
+# palavras e pequenas diferenças de transcrição). MIT, mantido, wheel
+# pré-compilada para Windows (sem precisar de compilador).
+rapidfuzz==3.10.1
+
 # Testes automatizados
 pytest==8.3.3
