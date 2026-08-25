@@ -30,7 +30,7 @@ def normalize_text(text: str) -> str:
 def detect_wake_word(normalized_text: str) -> Tuple[bool, int]:
     """Verifica se a PRIMEIRA palavra da fala é a wake word (com tolerância a
     variações de transcrição). Checar só a primeira palavra evita falsos
-    positivos (ex.: "fui na loja da alexa" não deve ativar a assistente).
+    positivos (ex.: "conheço um cara chamado nero" não deve ativar a assistente).
 
     Retorna (encontrou, quantidade_de_palavras_consumidas).
     """

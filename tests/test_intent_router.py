@@ -191,14 +191,14 @@ def test_youtube_search_params_extraction():
 
 
 # --- diálogo de exemplo (seção 25 do pedido): deve executar direto, sem
-# pedir confirmação, mesmo com o "Alexa" e a pontuação da fala completa -----
+# pedir confirmação, mesmo com o "Nero" e a pontuação da fala completa -----
 
 @pytest.mark.parametrize("text,expected_intent", [
-    ("Alexa, você sabe me dizer qual é a data de hoje?", Intent.GET_DATE),
-    ("Alexa, e que horas são?", Intent.GET_TIME),
-    ("Alexa, quero colocar um compromisso na minha agenda.", Intent.ADD_AGENDA),
-    ("Alexa você pode me dizer que dia é hoje?", Intent.GET_DATE),
-    ("Alexa me fala a data.", Intent.GET_DATE),
+    ("Nero, você sabe me dizer qual é a data de hoje?", Intent.GET_DATE),
+    ("Nero, e que horas são?", Intent.GET_TIME),
+    ("Nero, quero colocar um compromisso na minha agenda.", Intent.ADD_AGENDA),
+    ("Nero você pode me dizer que dia é hoje?", Intent.GET_DATE),
+    ("Nero me fala a data.", Intent.GET_DATE),
 ])
 def test_showcase_dialogue_executes_without_confirmation(text, expected_intent):
     match = _route(text)

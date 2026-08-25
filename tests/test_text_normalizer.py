@@ -2,7 +2,7 @@ from assistant.text_normalizer import detect_wake_word, normalize_text
 
 
 def test_normalize_lowercases_and_strips_accents():
-    assert normalize_text("Alexa, Que Horas São?") == "alexa que horas sao"
+    assert normalize_text("Nero, Que Horas São?") == "nero que horas sao"
 
 
 def test_normalize_collapses_spaces():
@@ -10,13 +10,13 @@ def test_normalize_collapses_spaces():
 
 
 def test_detect_wake_word_exact():
-    found, count = detect_wake_word("alexa que horas sao")
+    found, count = detect_wake_word("nero que horas sao")
     assert found is True
     assert count == 1
 
 
 def test_detect_wake_word_variant():
-    found, _ = detect_wake_word("alexia que horas sao")
+    found, _ = detect_wake_word("niro que horas sao")
     assert found is True
 
 
@@ -27,5 +27,5 @@ def test_detect_wake_word_absent():
 
 
 def test_detect_wake_word_not_false_positive_mid_sentence():
-    found, _ = detect_wake_word("eu fui na loja da alexa ontem")
+    found, _ = detect_wake_word("eu conheco um cara chamado nero")
     assert found is False

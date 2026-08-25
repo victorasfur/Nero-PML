@@ -1,13 +1,13 @@
 """Loop principal: máquina de estados que garante que NENHUM comando é
-executado antes da palavra de ativação "Alexa".
+executado antes da palavra de ativação "Nero".
 
-    WAITING_WAKE_WORD --"alexa"--> WAITING_COMMAND --comando--> WAITING_WAKE_WORD
+    WAITING_WAKE_WORD --"nero"--> WAITING_COMMAND --comando--> WAITING_WAKE_WORD
                                         |
                                         +--> WAITING_AGENDA_EVENT --evento--> WAITING_WAKE_WORD
                                         +--> WAITING_CONFIRMATION_CLEAR_AGENDA --sim/não--> WAITING_WAKE_WORD
                                         +--> WAITING_CONFIRM_INTENT --sim/não--> WAITING_WAKE_WORD
 
-Se "Alexa" e o comando vierem na mesma fala ("Alexa, que horas são?"), o
+Se "Nero" e o comando vierem na mesma fala ("Nero, que horas são?"), o
 restante da frase é executado imediatamente após a wake word ser detectada.
 
 WAITING_CONFIRM_INTENT existe porque intent_router.classify() pode ter
@@ -31,7 +31,7 @@ colorama_init()
 
 def print_banner() -> None:
     print("=" * 48)
-    print("        ALEXA - ASSISTENTE VIRTUAL")
+    print("        NERO - ASSISTENTE VIRTUAL")
     print("=" * 48)
     print()
 

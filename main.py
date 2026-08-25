@@ -16,7 +16,7 @@ def list_mics() -> None:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Alexa - Assistente Virtual em Python")
+    parser = argparse.ArgumentParser(description="Nero - Assistente Virtual em Python")
     parser.add_argument(
         "--text-mode",
         action="store_true",

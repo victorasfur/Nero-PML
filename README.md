@@ -1,7 +1,7 @@
-# Alexa — Assistente Virtual em Python
+# Nero — Assistente Virtual em Python
 
 Assistente virtual acadêmica, controlada por voz, com palavra de ativação
-obrigatória ("Alexa"). Nenhum comando é executado antes da wake word ser
+obrigatória ("Nero"). Nenhum comando é executado antes da wake word ser
 reconhecida.
 
 ## 1. Objetivo do projeto
@@ -46,7 +46,7 @@ python --version
 ## 5. Criação do ambiente virtual
 
 ```powershell
-cd "caminho\para\alexa-assistente"
+cd "caminho\para\nero-assistente"
 python -m venv .venv
 .venv\Scripts\Activate.ps1
 ```
@@ -113,7 +113,7 @@ sem derrubar a aplicação.
 
 ## 10. Cadastro das faces
 
-Antes de usar "Alexa reconhecer face" ou "Alexa quem sou eu", cadastre pelo
+Antes de usar "Nero reconhecer face" ou "Nero quem sou eu", cadastre pelo
 menos uma pessoa com o utilitário de captura (não é um comando de voz):
 
 ```powershell
@@ -139,7 +139,7 @@ python main.py --text-mode
 
 ## 12. Reconhecimento de intenção e lista de comandos
 
-Todos exigem a wake word "Alexa" antes (na mesma fala ou em falas separadas).
+Todos exigem a wake word "Nero" antes (na mesma fala ou em falas separadas).
 A partir daí, a assistente **não exige uma frase exata** — ela reconhece a
 intenção por trás de várias formas naturais de pedir a mesma coisa (ver
 `assistant/intent_router.py`):
@@ -172,7 +172,7 @@ STT → normalização → matchers estruturais (regex: calculadora, clima,
 | `SCREENSHOT` | "tirar um print da tela" | Salva um screenshot com data/hora no nome |
 | `VOLUME_UP` / `VOLUME_DOWN` | "aumentar/diminuir o volume" | Ajusta o volume do sistema |
 | — | "cancelar" (em qualquer pergunta pendente) | Cancela o cadastro de evento/confirmação em andamento |
-| `ASK_AI` | qualquer outra pergunta ("explique o que é Python") | Encaminhada para a IA generativa (Gemini), sem a palavra "Alexa" |
+| `ASK_AI` | qualquer outra pergunta ("explique o que é Python") | Encaminhada para a IA generativa (Gemini), sem a palavra "Nero" |
 
 **Por que "fale sobre reconhecimento facial" não abre a câmera**: frases que
 falam *sobre* um assunto ("fale sobre", "explique", "o que é", "como
@@ -182,7 +182,7 @@ IA — mesmo que o assunto mencionado seja parecido com uma intenção real.
 ## 13. Estrutura do projeto
 
 ```
-alexa-assistente/
+nero-assistente/
 ├── main.py
 ├── requirements.txt
 ├── .env / .env.example
@@ -254,7 +254,7 @@ Handlers não sabem nada sobre COMO a intenção foi reconhecida — só recebem
      cobrir toda variação possível, o fuzzy matching (rapidfuzz) tolera
      pequenas diferenças de transcrição e reordenação de palavras.
 4. Não é necessário tocar em `assistant.py` — `commands.dispatch()` já é
-   chamado tanto para "Alexa, comando" na mesma fala quanto para comandos
+   chamado tanto para "Nero, comando" na mesma fala quanto para comandos
    ditos após a ativação, e já aplica a política de confiança (executar /
    confirmar / encaminhar para IA).
 
@@ -267,7 +267,7 @@ pytest
 Cobre a calculadora (as 4 operações, divisão por zero, números por extenso,
 símbolos "+ - * /"), a agenda (criação, escrita, leitura, múltiplos eventos,
 limpeza sem excluir o arquivo), o normalizador de texto/wake word (incluindo
-o falso positivo em "fui na loja da alexa"), e o reconhecimento de intenção
+o falso positivo em "conheço um cara chamado nero"), e o reconhecimento de intenção
 (`test_intent_router.py`): dezenas de variações naturais por intenção, o
 diálogo de exemplo completo executando sem pedir confirmação, extração de
 parâmetros (cidade, expressão de cálculo, busca do YouTube), e os três

@@ -13,7 +13,7 @@ SCREENSHOTS_DIR = BASE_DIR / "screenshots"
 
 # Palavra de ativação: variantes toleradas e limiar de similaridade (difflib.SequenceMatcher).
 # Only a palavra inicial da frase é comparada, para evitar falsos positivos no meio da fala.
-WAKE_WORD_VARIANTS = ["alexa", "alexia", "aleksa", "alesa", "alecsa", "alexo", "alexis"]
+WAKE_WORD_VARIANTS = ["nero", "niro", "neru"]
 WAKE_WORD_SIMILARITY_THRESHOLD = 0.75
 
 # Reconhecimento de voz (SpeechRecognition + Google Web Speech API).

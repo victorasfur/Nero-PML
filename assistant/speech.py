@@ -101,7 +101,7 @@ class SpeechEngine:
             self.tts_engine = None
 
     def speak(self, text: str) -> None:
-        print(f"Alexa: {text}")
+        print(f"Nero: {text}")
         if not self.tts_engine:
             return
         try:
