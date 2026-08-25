@@ -1,125 +1,229 @@
+import asyncio
+import os
+import tempfile
+
 import speech_recognition as sr
-import pyttsx3
+import edge_tts
+import pygame
 
 from config import settings
 
 
 class InputClosed(Exception):
-    """Sinaliza que a fonte de entrada acabou (EOF no --text-mode ou Ctrl+C)
-    e o loop principal deve encerrar, em vez de continuar tentando ouvir."""
+    """Sinaliza que a fonte de entrada acabou (EOF no --text-mode ou Ctrl+C)."""
+
 
 
 class SpeechEngine:
     """Encapsula reconhecimento de voz (STT) e síntese de voz (TTS).
 
-    Em text_mode, listen() lê do teclado em vez do microfone — usado como
-    fallback de demonstração caso o microfone/internet falhem ao vivo.
+    STT:
+        SpeechRecognition + Google
+
+    TTS:
+        Microsoft Edge TTS com voz masculina neural em português do Brasil.
     """
+
+    # Voz masculina brasileira do NERO
+    VOICE = "pt-BR-AntonioNeural"
+
+    # Ajustes da personalidade da voz
+    RATE = "-5%"
+    VOLUME = "+0%"
+    PITCH = "-2Hz"
 
     def __init__(self, text_mode: bool = False, mic_index: int = None):
         self.text_mode = text_mode
         self.mic_index = mic_index
+
         self.recognizer = None
         self.microphone = None
-        self.tts_engine = None
         self._mic_available = False
 
-        if not text_mode:
-            self._init_microphone()
+        self._init_microphone()
         self._init_tts()
 
+    # ------------------------------------------------------------------
+    # MICROFONE / SPEECH-TO-TEXT
+    # ------------------------------------------------------------------
+
     def _init_microphone(self) -> None:
+        if self.text_mode:
+            return
+
         try:
             self.recognizer = sr.Recognizer()
+
             device_names = sr.Microphone.list_microphone_names()
+
             if not device_names:
                 print(
                     "[AVISO] Nenhum microfone foi detectado pelo Windows. "
                     "Conecte um microfone ou defina um dispositivo de entrada padrão em "
                     "Configurações > Som. Rode com --text-mode enquanto isso."
                 )
+
                 self._mic_available = False
                 return
 
-            self.microphone = sr.Microphone(device_index=self.mic_index)
-            with self.microphone as source:
-                self.recognizer.adjust_for_ambient_noise(source, duration=1)
+            self.microphone = sr.Microphone(
+                device_index=self.mic_index
+            )
 
-                # Em alguns microfones (USB baratos, ruído de driver) a calibração acima
-                # produz um limiar de energia absurdamente alto e a fala nunca é detectada.
-                if self.recognizer.energy_threshold > settings.MIC_ENERGY_THRESHOLD_CEILING:
+            with self.microphone as source:
+                self.recognizer.adjust_for_ambient_noise(
+                    source,
+                    duration=1
+                )
+
+                if (
+                    self.recognizer.energy_threshold
+                    > settings.MIC_ENERGY_THRESHOLD_CEILING
+                ):
                     print(
                         f"[AVISO] Limiar de energia calibrado muito alto "
-                        f"({self.recognizer.energy_threshold:.0f}); usando um valor mais "
-                        f"sensível ({settings.MIC_ENERGY_THRESHOLD_FALLBACK}) para não perder fala."
+                        f"({self.recognizer.energy_threshold:.0f}); "
+                        f"usando um valor mais sensível "
+                        f"({settings.MIC_ENERGY_THRESHOLD_FALLBACK}) "
+                        f"para não perder fala."
                     )
-                    self.recognizer.energy_threshold = settings.MIC_ENERGY_THRESHOLD_FALLBACK
+
+                    self.recognizer.energy_threshold = (
+                        settings.MIC_ENERGY_THRESHOLD_FALLBACK
+                    )
+
                 self.recognizer.dynamic_energy_threshold = True
 
-            used_index = self.mic_index if self.mic_index is not None else "padrão do Windows"
-            used_name = device_names[self.mic_index] if self.mic_index is not None else ""
-            print(
-                f"Microfone em uso: {used_name or '(dispositivo padrão)'} "
-                f"[index={used_index}] | limiar de energia: {self.recognizer.energy_threshold:.0f}"
+            used_index = (
+                self.mic_index
+                if self.mic_index is not None
+                else "padrão do Windows"
             )
+
+            used_name = (
+                device_names[self.mic_index]
+                if self.mic_index is not None
+                else ""
+            )
+
+            print(
+                f"Microfone em uso: "
+                f"{used_name or '(dispositivo padrão)'} "
+                f"[index={used_index}] | "
+                f"limiar de energia: "
+                f"{self.recognizer.energy_threshold:.0f}"
+            )
+
             self._mic_available = True
+
         except Exception as e:
-            # SpeechRecognition tem um bug conhecido: se Microphone.__enter__ falhar ao
-            # abrir o stream, o __exit__ tenta fechar um stream inexistente e lança um
-            # segundo erro (ex.: "'NoneType' object has no attribute 'close'") que mascara
-            # a causa raiz real. Essa causa real fica em e.__context__ — exibimos as duas.
-            root_cause = e.__context__ if e.__context__ is not None else e
-            print(
-                f"[AVISO] Microfone indisponível ({root_cause}). Provavelmente outro "
-                "aplicativo está usando o microfone em modo exclusivo (Teams, Zoom, "
-                "navegador, etc.) ou o dispositivo de entrada padrão do Windows mudou. "
-                "Feche outros apps que usam o microfone e tente novamente, ou rode com --text-mode."
+            root_cause = (
+                e.__context__
+                if e.__context__ is not None
+                else e
             )
+
+            print(
+                f"[AVISO] Microfone indisponível ({root_cause}). "
+                f"Provavelmente outro aplicativo está usando o microfone "
+                f"em modo exclusivo (Teams, Zoom, navegador, etc.) ou "
+                f"o dispositivo de entrada padrão do Windows mudou. "
+                f"Feche outros apps que usam o microfone e tente novamente, "
+                f"ou rode com --text-mode."
+            )
+
             self._mic_available = False
+
+    # ------------------------------------------------------------------
+    # TEXT-TO-SPEECH
+    # ------------------------------------------------------------------
 
     def _init_tts(self) -> None:
         try:
-            self.tts_engine = pyttsx3.init()
-            voices = self.tts_engine.getProperty("voices") or []
-            chosen_id = None
-            for voice in voices:
-                blob = f"{voice.name} {voice.id} {getattr(voice, 'languages', [])}".lower()
-                if "brazil" in blob or "portuguese" in blob or "pt-br" in blob or "pt_br" in blob:
-                    chosen_id = voice.id
-                    break
-            if chosen_id:
-                self.tts_engine.setProperty("voice", chosen_id)
-            else:
-                print(
-                    "[AVISO] Nenhuma voz em português (Brasil) instalada no Windows foi encontrada. "
-                    "Instale um pacote de voz pt-BR em Configurações > Hora e Idioma > Voz. "
-                    "Usando a voz padrão do sistema por enquanto."
-                )
-            self.tts_engine.setProperty("rate", 175)
+            pygame.mixer.init()
+
+            print(
+                f"Voz do NERO: {self.VOICE}"
+            )
+
         except Exception as e:
-            print(f"[AVISO] Não foi possível iniciar o sintetizador de voz (pyttsx3): {e}")
-            self.tts_engine = None
+            print(
+                f"[AVISO] Não foi possível iniciar o sistema de áudio: {e}"
+            )
+
+    async def _generate_speech(self, text: str, output_file: str) -> None:
+        communicate = edge_tts.Communicate(
+            text,
+            self.VOICE,
+            rate=self.RATE,
+            volume=self.VOLUME,
+            pitch=self.PITCH,
+        )
+
+        await communicate.save(output_file)
 
     def speak(self, text: str) -> None:
         print(f"Nero: {text}")
-        if not self.tts_engine:
-            return
+
         try:
-            self.tts_engine.say(text)
-            self.tts_engine.runAndWait()
+            with tempfile.NamedTemporaryFile(
+                suffix=".mp3",
+                delete=False
+            ) as temp:
+                audio_file = temp.name
+
+            asyncio.run(
+                self._generate_speech(
+                    text,
+                    audio_file
+                )
+            )
+
+            pygame.mixer.music.load(audio_file)
+            pygame.mixer.music.play()
+
+            while pygame.mixer.music.get_busy():
+                pygame.time.Clock().tick(20)
+
+            pygame.mixer.music.unload()
+
+            try:
+                os.remove(audio_file)
+            except OSError:
+                pass
+
         except Exception as e:
-            print(f"[AVISO] Falha ao sintetizar voz: {e}")
+            print(
+                f"[AVISO] Falha ao sintetizar voz: {e}"
+            )
+
+    # ------------------------------------------------------------------
+    # SPEECH-TO-TEXT
+    # ------------------------------------------------------------------
 
     def listen(self):
-        """Retorna o texto transcrito, "" se ouviu algo mas não entendeu,
-        ou None se não havia nada para capturar (silêncio/timeout/sem mic)."""
+        """Retorna o texto transcrito.
+
+        Retorna:
+            texto transcrito
+            "" se ouviu algo mas não entendeu
+            None se não houve captura
+        """
+
         if self.text_mode:
             try:
                 text = input("Você (texto): ").strip()
+
             except EOFError:
-                raise InputClosed("entrada de texto encerrada (EOF)")
+                raise InputClosed(
+                    "entrada de texto encerrada (EOF)"
+                )
+
             except KeyboardInterrupt:
-                raise InputClosed("interrompido pelo usuário")
+                raise InputClosed(
+                    "interrompido pelo usuário"
+                )
+
             return text or None
 
         if not self._mic_available:
@@ -132,16 +236,28 @@ class SpeechEngine:
                     timeout=settings.LISTEN_TIMEOUT_SECONDS,
                     phrase_time_limit=settings.LISTEN_PHRASE_TIME_LIMIT,
                 )
+
         except sr.WaitTimeoutError:
             return None
+
         except OSError as e:
-            print(f"[ERRO] Problema ao acessar o microfone: {e}")
+            print(
+                f"[ERRO] Problema ao acessar o microfone: {e}"
+            )
             return None
 
         try:
-            return self.recognizer.recognize_google(audio, language="pt-BR")
+            return self.recognizer.recognize_google(
+                audio,
+                language="pt-BR"
+            )
+
         except sr.UnknownValueError:
             return ""
+
         except sr.RequestError as e:
-            print(f"[ERRO] Falha ao contatar o serviço de reconhecimento de voz (verifique a internet): {e}")
+            print(
+                "[ERRO] Falha ao contatar o serviço de "
+                f"reconhecimento de voz (verifique a internet): {e}"
+            )
             return None
