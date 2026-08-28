@@ -5,33 +5,36 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Nero</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
   :root{
-    --void: #03060c;
-    --deep: #060c1a;
+    --void: #020617;
+    --deep: #050b1f;
     --panel: #0b1424;
     --panel-line: #16233b;
+    --blue: #0066ff;
     --ice: #57c7ff;
     --ice-soft: #2f7fb8;
-    --cyan: #8ff0ff;
-    --text-hi: #e7f2fb;
-    --text-mid: #7f93ad;
+    --cyan: #00f0ff;
+    --text-hi: #f8fafc;
+    --text-mid: #94a3b8;
     --text-low: #465771;
     --danger: #ff6b6b;
+
+    --core-size: min(72vmin, 540px);
   }
 
   *{ box-sizing:border-box; margin:0; padding:0; }
-
   html,body{ height:100%; }
 
   body{
     background:
-      radial-gradient(ellipse 90% 60% at 50% -10%, #0c1c33 0%, transparent 60%),
-      radial-gradient(ellipse 70% 50% at 85% 100%, #081428 0%, transparent 55%),
+      radial-gradient(ellipse 90% 60% at 50% -8%,  #0c1c33 0%, transparent 60%),
+      radial-gradient(ellipse 70% 55% at 88% 108%, #07142f 0%, transparent 55%),
       var(--void);
     color: var(--text-hi);
-    font-family: 'Inter', sans-serif;
+    font-family: 'Poppins', system-ui, sans-serif;
     min-height:100vh;
     display:flex;
     flex-direction:column;
@@ -41,52 +44,69 @@
     position:relative;
   }
 
-  /* ---------- textura de fundo ---------- */
+  /* textura de fundo — linhas verticais discretas + leve ruído */
   body::before{
     content:'';
     position:fixed; inset:0;
     background-image:
-      linear-gradient(var(--panel-line) 1px, transparent 1px),
       linear-gradient(90deg, var(--panel-line) 1px, transparent 1px);
-    background-size: 64px 64px;
-    opacity:.08;
+    background-size: 84px 100%;
+    opacity:.05;
     pointer-events:none;
+    z-index:0;
+  }
+  body::after{
+    content:'';
+    position:fixed; inset:0;
+    background: radial-gradient(circle at 50% 42%, transparent 55%, rgba(2,6,23,.55) 100%);
+    pointer-events:none;
+    z-index:0;
   }
 
   /* ---------- topo ---------- */
   .topbar{
     width:100%;
     display:flex;
-    align-items:center;
+    align-items:flex-start;
     justify-content:space-between;
-    padding: 28px 36px;
-    z-index:2;
+    padding: 26px 34px;
+    z-index:3;
   }
-
-  .wordmark{
+  .brand{ display:flex; flex-direction:column; gap:3px; }
+  .brand .name{
     font-family:'Space Grotesk', sans-serif;
     font-weight:700;
-    font-size: 20px;
-    letter-spacing: 0.14em;
+    font-size: 18px;
+    letter-spacing:.34em;
     color: var(--text-hi);
-    display:flex;
-    align-items:center;
-    gap:10px;
   }
-  .wordmark .dot{
-    width:8px; height:8px; border-radius:50%;
-    background: var(--ice);
-    box-shadow: 0 0 10px 2px var(--ice);
+  .brand .sub{
+    font-size: 10px;
+    letter-spacing:.32em;
+    text-transform:uppercase;
+    color: var(--text-low);
   }
 
-  .clock{
-    font-family:'Space Grotesk', sans-serif;
-    font-size: 13px;
-    letter-spacing: .08em;
+  .conn{ display:flex; flex-direction:column; align-items:flex-end; gap:4px; }
+  .conn .online{
+    display:flex; align-items:center; gap:8px;
+    font-size: 11px; letter-spacing:.24em; text-transform:uppercase;
     color: var(--text-mid);
   }
+  .conn .online .led{
+    width:7px; height:7px; border-radius:50%;
+    background: var(--ice);
+    box-shadow: 0 0 10px 2px rgba(87,199,255,.8);
+    animation: ledPulse 2.4s ease-in-out infinite;
+  }
+  @keyframes ledPulse{ 0%,100%{ opacity:1; transform:scale(1);} 50%{ opacity:.35; transform:scale(.8);} }
+  .conn .clock{
+    font-family:'Space Grotesk', sans-serif;
+    font-size: 11px; letter-spacing:.12em;
+    color: var(--text-low);
+  }
 
-  /* ---------- núcleo central ---------- */
+  /* ---------- palco / núcleo ---------- */
   .stage{
     flex:1;
     width:100%;
@@ -94,297 +114,667 @@
     flex-direction:column;
     align-items:center;
     justify-content:center;
-    gap: 40px;
+    gap: 34px;
     z-index:2;
+    padding: 0 20px;
   }
 
   .orb-wrap{
     position:relative;
-    width: 300px;
-    height: 300px;
-    display:flex;
-    align-items:center;
-    justify-content:center;
+    width: var(--core-size);
+    height: var(--core-size);
+    max-height: 62vh;
+    aspect-ratio: 1;
   }
+  #coreCanvas{ position:absolute; inset:0; width:100%; height:100%; display:block; }
 
-  .ring{
-    position:absolute;
-    border-radius:50%;
-    border: 1px solid var(--panel-line);
-    opacity:.5;
-  }
-  .ring.r1{ width:100%; height:100%; }
-  .ring.r2{ width:78%; height:78%; }
-  .ring.r3{ width:56%; height:56%; }
-
-  .core{
-    position:relative;
-    width: 148px;
-    height: 148px;
-    border-radius:50%;
-    background:
-      radial-gradient(circle at 35% 30%, var(--cyan) 0%, var(--ice) 35%, var(--ice-soft) 62%, #08213a 100%);
-    box-shadow:
-      0 0 40px 6px rgba(87,199,255,.35),
-      0 0 90px 20px rgba(87,199,255,.12),
-      inset 0 0 30px rgba(0,0,0,.35);
-    animation: breathe 4.2s ease-in-out infinite;
-    transition: filter .4s ease;
-  }
-
-  @keyframes breathe{
-    0%,100%{ transform: scale(1); }
-    50%{ transform: scale(1.05); }
-  }
-
-  /* barras de espectro ao redor do núcleo */
-  .bars{
-    position:absolute;
-    inset:0;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-  }
-  .bar{
-    position:absolute;
-    width: 3px;
-    height: 10px;
-    border-radius: 3px;
-    background: var(--ice);
-    opacity:.55;
-    transform-origin: center 150px;
-    transition: height .18s ease, opacity .3s ease, background .3s ease;
-  }
-
-  /* ---------- estado / legenda ---------- */
   .status{
     display:flex;
     flex-direction:column;
     align-items:center;
-    gap:10px;
-    min-height: 70px;
+    gap:14px;
+    min-height: 120px;
+    text-align:center;
   }
-
   .status-label{
     font-family:'Space Grotesk', sans-serif;
-    font-size: 14px;
-    letter-spacing: .18em;
+    font-size: 12px;
+    letter-spacing:.42em;
     text-transform:uppercase;
     color: var(--ice);
+    display:flex; align-items:center; gap:12px;
+    transition: color .4s ease;
+  }
+  .status-label .pip{
+    width:5px; height:5px; border-radius:50%;
+    background: currentColor;
+    box-shadow: 0 0 8px 2px currentColor;
+    animation: blink 1.7s ease-in-out infinite;
+  }
+  @keyframes blink{ 0%,100%{opacity:1;} 50%{opacity:.2;} }
+
+  .line{
+    max-width: 620px;
+    padding: 0 8px;
+    opacity:0;
+    transform: translateY(10px);
+    filter: blur(6px);
+    transition: opacity .5s ease, transform .5s ease, filter .5s ease;
+  }
+  .line.in{ opacity:1; transform:none; filter:blur(0); }
+  .transcript{ font-size: clamp(18px, 2.4vw, 26px); font-weight:400; color: var(--text-mid); line-height:1.45; }
+  .response{ font-size: clamp(16px, 2vw, 21px); font-weight:400; color: var(--text-hi); line-height:1.55; }
+
+  /* ---------- interação de voz ---------- */
+  .voice{
     display:flex;
+    flex-direction:column;
     align-items:center;
-    gap:10px;
-    transition: color .3s ease;
+    gap:14px;
+    padding: 18px 0 34px;
+    z-index:3;
   }
-  .status-label .pulse{
-    width:6px; height:6px; border-radius:50%;
-    background: var(--ice);
-    box-shadow: 0 0 8px 2px var(--ice);
-    animation: blink 1.6s ease-in-out infinite;
-  }
-  @keyframes blink{ 0%,100%{opacity:1;} 50%{opacity:.25;} }
-
-  .transcript{
-    max-width: 560px;
-    text-align:center;
-    font-size: 16px;
-    line-height:1.5;
-    color: var(--text-mid);
-    padding: 0 24px;
-    min-height: 24px;
-  }
-  .transcript.response{ color: var(--text-hi); font-weight:500; }
-
-  /* ---------- estados globais via classe no body ---------- */
-
-  body.state-idle .core{ filter: saturate(.75) brightness(.85); }
-  body.state-idle .bar{ opacity:.25; }
-  body.state-idle .status-label{ color: var(--text-mid); }
-  body.state-idle .status-label .pulse{ background: var(--text-mid); box-shadow:none; animation:none; }
-
-  body.state-listening .core{ animation: breathe 1.4s ease-in-out infinite; }
-  body.state-listening .bar{ background: var(--ice); opacity:.9; }
-  body.state-listening .ring{ border-color: var(--ice-soft); }
-
-  body.state-thinking .core{
-    animation: spinPulse 2.2s linear infinite, breathe 2.2s ease-in-out infinite;
-  }
-  body.state-thinking .status-label{ color: var(--cyan); }
-  body.state-thinking .ring.r1{ animation: rotate 6s linear infinite; border-color: var(--ice-soft); }
-  body.state-thinking .ring.r2{ animation: rotate 4s linear infinite reverse; border-color: var(--ice-soft); }
-  @keyframes rotate{ from{ transform: rotate(0deg);} to{ transform: rotate(360deg);} }
-  @keyframes spinPulse{ 0%,100%{ filter:hue-rotate(0deg);} 50%{ filter:hue-rotate(12deg);} }
-
-  body.state-speaking .core{ animation: breathe 0.9s ease-in-out infinite; }
-  body.state-speaking .bar{ background: var(--cyan); opacity:1; }
-  body.state-speaking .status-label{ color: var(--cyan); }
-
-  /* ---------- rodapé / painel de teste ---------- */
-  .devpanel{
-    z-index:2;
-    display:flex;
-    gap:10px;
-    padding: 26px 36px 34px;
-    flex-wrap:wrap;
-    justify-content:center;
-  }
-  .devpanel button{
-    font-family:'Inter', sans-serif;
-    font-size: 12px;
-    letter-spacing:.04em;
-    color: var(--text-mid);
-    background: var(--panel);
-    border: 1px solid var(--panel-line);
-    padding: 9px 16px;
-    border-radius: 999px;
+  .mic{
+    position:relative;
+    width:60px; height:60px;
+    border-radius:50%;
+    display:grid; place-items:center;
+    background: linear-gradient(180deg, rgba(87,199,255,.16), rgba(87,199,255,.04));
+    border: 1px solid rgba(87,199,255,.3);
+    color: var(--ice);
     cursor:pointer;
-    transition: all .2s ease;
+    transition: transform .18s ease, box-shadow .3s ease, border-color .3s ease;
   }
-  .devpanel button:hover{
-    color: var(--text-hi);
-    border-color: var(--ice-soft);
-    box-shadow: 0 0 12px rgba(87,199,255,.15);
+  .mic:hover{ transform: scale(1.05); box-shadow: 0 0 26px rgba(87,199,255,.28); border-color: var(--ice); }
+  .mic:active{ transform: scale(.95); }
+  .mic svg{ width:24px; height:24px; }
+  .mic::after{
+    content:'';
+    position:absolute; inset:-1px;
+    border-radius:50%;
+    border:1px solid rgba(87,199,255,.5);
+    opacity:0;
   }
+  body.state-listening .mic::after{ animation: micRing 1.6s ease-out infinite; }
+  @keyframes micRing{ 0%{ opacity:.6; transform:scale(1);} 100%{ opacity:0; transform:scale(1.7);} }
+  .voice .hint{ font-size:11px; letter-spacing:.24em; text-transform:uppercase; color: var(--text-low); }
+
+  /* ---------- painel de teste (dev) ---------- */
+  .devpanel{
+    position:fixed;
+    bottom:14px; left:50%; transform:translateX(-50%);
+    display:flex; gap:7px; flex-wrap:wrap; justify-content:center;
+    padding:8px;
+    /* background: rgba(11,20,36,.55); */
+    border:1px solid var(--panel-line);
+    border-radius:999px;
+    backdrop-filter: blur(10px);
+    z-index:5;
+    opacity:.22;
+    transition: opacity .25s ease;
+  }
+  .devpanel:hover{ opacity:1; }
+  .devpanel button{
+    font-family:'Space Grotesk', sans-serif;
+    font-size:10px; letter-spacing:.12em; text-transform:uppercase;
+    color: var(--text-mid);
+    background: transparent;
+    border:1px solid transparent;
+    padding:6px 12px;
+    border-radius:999px;
+    cursor:pointer;
+    transition: all .18s ease;
+  }
+  .devpanel button:hover{ color: var(--text-hi); }
   .devpanel button.active{
     color: var(--void);
     background: var(--ice);
-    border-color: var(--ice);
   }
 
-  @media (max-width: 480px){
-    .orb-wrap{ width: 220px; height:220px; }
-    .core{ width: 108px; height:108px; }
+  @media (max-width: 560px){
+    :root{ --core-size: 78vw; }
+    .topbar{ padding:18px 20px; }
+    .stage{ gap:24px; }
+    .status{ min-height: 96px; }
+  }
+  @media (prefers-reduced-motion: reduce){
+    .conn .online .led, .status-label .pip{ animation:none; }
   }
 </style>
 </head>
 <body class="state-idle">
 
   <div class="topbar">
-    <div class="wordmark"><span class="dot"></span>NERO</div>
-    <div class="clock" id="clock">--:--</div>
+    <div class="brand">
+      <span class="name">NERO</span>
+      <span class="sub">AI Assistant</span>
+    </div>
+    <div class="conn">
+      <span class="online"><span class="led"></span>Online</span>
+      <span class="clock" id="clock">--:--</span>
+    </div>
   </div>
 
   <div class="stage">
     <div class="orb-wrap" id="orbWrap">
-      <div class="ring r1"></div>
-      <div class="ring r2"></div>
-      <div class="ring r3"></div>
-      <div class="bars" id="bars"></div>
-      <div class="core" id="core"></div>
+      <canvas id="coreCanvas"></canvas>
     </div>
 
     <div class="status">
-      <div class="status-label" id="statusLabel"><span class="pulse"></span><span id="statusText">Em espera</span></div>
-      <div class="transcript" id="transcriptText"></div>
-      <div class="transcript response" id="responseText"></div>
+      <div class="status-label" id="statusLabel"><span class="pip"></span><span id="statusText">Em espera</span></div>
+      <div class="line transcript" id="transcriptLine"></div>
+      <div class="line response" id="responseLine"></div>
     </div>
   </div>
 
-  <!-- Painel apenas para teste manual da interface. Pode remover na integração final. -->
-  <div class="devpanel">
-    <button data-state="idle" class="active">Em espera</button>
+  <div class="voice">
+    <button class="mic" id="micBtn" aria-label="Falar com o Nero">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="9" y="3" width="6" height="11" rx="3"></rect>
+        <path d="M6 11a6 6 0 0 0 12 0"></path>
+        <line x1="12" y1="17" x2="12" y2="21"></line>
+      </svg>
+    </button>
+    <span class="hint" id="micHint">Toque para falar</span>
+  </div>
+
+  <!-- Painel apenas para teste manual da interface (teclas 1-6). Pode ocultar na integração final. -->
+  <div class="devpanel" id="devPanel">
+    <button data-state="idle" class="active">Espera</button>
     <button data-state="listening">Ouvindo</button>
     <button data-state="thinking">Pensando</button>
     <button data-state="speaking">Falando</button>
+    <button data-state="executing">Executando</button>
+    <button data-state="error">Erro</button>
   </div>
 
 <script>
-/* ---------------------------------------------------------
-   NERO UI — motor de animação e API de integração
-   Uso a partir do backend Python (via pywebview, eel, ou
-   uma ponte WebSocket): ver instruções no final do arquivo.
---------------------------------------------------------- */
+/* =========================================================================
+   NERO UI — motor de animação procedural + API de integração
+   -------------------------------------------------------------------------
+   - O "AI Core" é 100% desenhado em Canvas 2D (sem libs externas), pra
+     rodar offline dentro do pywebview.
+   - O backend Python controla tudo por window.Nero (ver final do arquivo).
+   ========================================================================= */
 
-const BAR_COUNT = 40;
-const barsEl = document.getElementById('bars');
-const bars = [];
+(() => {
+  "use strict";
 
-for (let i = 0; i < BAR_COUNT; i++) {
-  const bar = document.createElement('div');
-  bar.className = 'bar';
-  const angle = (360 / BAR_COUNT) * i;
-  bar.style.transform = `rotate(${angle}deg) translateY(-150px)`;
-  barsEl.appendChild(bar);
-  bars.push(bar);
-}
+  const PALETTE = {
+    void:  [2, 6, 23],
+    blue:  [0, 102, 255],
+    ice:   [87, 199, 255],
+    cyan:  [0, 240, 255],
+    dim:   [40, 74, 120],
+  };
+  const lerp  = (a, b, t) => a + (b - a) * t;
+  const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
+  const mix   = (c1, c2, t) => [lerp(c1[0],c2[0],t), lerp(c1[1],c2[1],t), lerp(c1[2],c2[2],t)];
+  const rgba  = (c, a) => `rgba(${c[0]|0},${c[1]|0},${c[2]|0},${a})`;
+  const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-const STATE_LABELS = {
-  idle: 'Em espera',
-  listening: 'Ouvindo',
-  thinking: 'Pensando',
-  speaking: 'Nero está falando'
-};
+  /* --------------------------------------------------------------------- */
+  /*  Perfis de estado — valores-ALVO; a animação faz easing até eles.     */
+  /* --------------------------------------------------------------------- */
+  const STATE_PROFILES = {
+    idle:      { energy:.16, speed:.12, deform:.34, glow:.42, breath:.55, spin:.04, particles:.16, sat:1,   waves:0,  converge:0 },
+    listening: { energy:.52, speed:.55, deform:.72, glow:.72, breath:1.6, spin:.10, particles:.55, sat:1,   waves:.3, converge:0 },
+    thinking:  { energy:.74, speed:1.05, deform:1.0, glow:.82, breath:1.9, spin:.55, particles:.9,  sat:1,   waves:.7, converge:0 },
+    speaking:  { energy:.6,  speed:.72, deform:.86, glow:.92, breath:2.3, spin:.16, particles:.7,  sat:1,   waves:1,  converge:0 },
+    executing: { energy:.56, speed:.9,  deform:.66, glow:.78, breath:1.7, spin:1.15, particles:.85, sat:1,   waves:.5, converge:1 },
+    error:     { energy:.2,  speed:.35, deform:.55, glow:.4,  breath:1.1, spin:.06, particles:.2,  sat:.25, waves:0,  converge:0 },
+  };
 
-let currentState = 'idle';
-let animFrame = null;
+  const STATE_LABELS = {
+    idle:      "Em espera",
+    listening: "Ouvindo",
+    thinking:  "Pensando",
+    speaking:  "Nero está falando",
+    executing: "Executando",
+    error:     "Erro",
+  };
 
-function setState(state) {
-  if (!STATE_LABELS[state]) return;
-  currentState = state;
-  document.body.className = `state-${state}`;
-  document.getElementById('statusText').textContent = STATE_LABELS[state];
+  /* --------------------------------------------------------------------- */
+  /*  Core Engine                                                          */
+  /* --------------------------------------------------------------------- */
+  class NeroCore {
+    constructor(canvas) {
+      this.canvas = canvas;
+      this.ctx = canvas.getContext("2d");
+      this.dpr = Math.min(window.devicePixelRatio || 1, 2);
+      this.t = 0;
+      this.spinAngle = 0;
+      this.audioLevel = 0;          // 0..1, alimentado por mic / áudio de fala
+      this.errorFlash = 0;
 
-  document.querySelectorAll('.devpanel button').forEach(b => {
-    b.classList.toggle('active', b.dataset.state === state);
-  });
+      this.state = "idle";
+      // parâmetros correntes (interpolados) começam no perfil idle
+      this.p = { ...STATE_PROFILES.idle };
 
-  if (state === 'idle') {
-    document.getElementById('transcriptText').textContent = '';
-    document.getElementById('responseText').textContent = '';
-  }
-}
+      this.LINES = reduceMotion ? 70 : 150;
+      this.lineCfg = [];
+      for (let i = 0; i < this.LINES; i++) {
+        const hot = Math.random() < 0.12;
+        this.lineCfg.push({
+          phase:  Math.random() * Math.PI * 2,
+          freqA:  2 + Math.floor(Math.random() * 4),
+          freqB:  3 + Math.floor(Math.random() * 6),
+          ampA:   0.06 + Math.random() * 0.12,
+          ampB:   0.03 + Math.random() * 0.08,
+          drift:  (Math.random() - 0.5) * 0.5,
+          radius: 0.62 + Math.random() * 0.34,      // fração do raio base
+          tone:   Math.random(),                    // ice <-> cyan
+          blue:   Math.random() < 0.28,             // algumas puxam pro azul profundo
+          hot,
+          baseAlpha: hot ? 0.22 : 0.05 + Math.random() * 0.12,
+          speedMul: 0.7 + Math.random() * 0.7,
+        });
+      }
 
-function setTranscript(text) {
-  document.getElementById('transcriptText').textContent = text || '';
-}
+      this.particles = [];
+      this.pulses = [];
+      this._pulseTimer = 0;
 
-function setResponse(text) {
-  document.getElementById('responseText').textContent = text || '';
-}
-
-/* animação das barras — reativa nos estados de escuta/fala,
-   quase parada em espera/pensamento */
-function animateBars() {
-  bars.forEach((bar, i) => {
-    let target = 10;
-    if (currentState === 'listening') {
-      target = 8 + Math.random() * 34;
-    } else if (currentState === 'speaking') {
-      target = 8 + Math.random() * 26;
-    } else if (currentState === 'thinking') {
-      target = 8 + 6 * Math.sin(Date.now() / 300 + i);
+      this._resize = this._resize.bind(this);
+      this._frame = this._frame.bind(this);
+      this._ro = new ResizeObserver(this._resize);
+      this._ro.observe(canvas.parentElement);
+      this._resize();
+      this._last = performance.now();
+      requestAnimationFrame(this._frame);
     }
-    bar.style.height = `${target}px`;
+
+    _resize() {
+      const r = this.canvas.parentElement.getBoundingClientRect();
+      this.w = Math.max(1, r.width);
+      this.h = Math.max(1, r.height);
+      this.canvas.width  = this.w * this.dpr;
+      this.canvas.height = this.h * this.dpr;
+      this.ctx.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
+      this.cx = this.w / 2;
+      this.cy = this.h / 2;
+      this.baseR = Math.min(this.w, this.h) * 0.34;
+    }
+
+    setState(state) {
+      if (!STATE_PROFILES[state]) return;
+      this.state = state;
+      if (state === "error") this.errorFlash = 1;
+    }
+
+    setAudioLevel(v) { this.audioLevel = clamp(v, 0, 1); }
+
+    emitPulse(strength = 1) {
+      this.pulses.push({ r: this.baseR * 0.35, a: 0.5 * strength, v: this.baseR * (0.9 + strength) });
+    }
+
+    _spawnParticle() {
+      const ring = this.baseR * (0.55 + Math.random() * 0.7);
+      const ang = Math.random() * Math.PI * 2;
+      this.particles.push({
+        ang,
+        r: ring,
+        baseR: ring,
+        speed: (0.2 + Math.random() * 0.9) * (Math.random() < 0.5 ? 1 : -1),
+        life: 1,
+        decay: 0.004 + Math.random() * 0.01,
+        size: 0.7 + Math.random() * 1.8,
+        tone: Math.random(),
+        targetAng: Math.floor(Math.random() * 6) * (Math.PI / 3),
+      });
+    }
+
+    _frame(now) {
+      const dt = Math.min(0.05, (now - this._last) / 1000);
+      this._last = now;
+
+      // easing dos parâmetros rumo ao perfil do estado atual
+      const target = STATE_PROFILES[this.state];
+      const k = 1 - Math.pow(0.001, dt);           // ~independente de FPS
+      for (const key in target) this.p[key] = lerp(this.p[key], target[key], k);
+
+      // energia efetiva combina perfil + áudio (mic / fala)
+      const audioBoost = (this.state === "listening" || this.state === "speaking") ? this.audioLevel : 0;
+      const energy = clamp(this.p.energy + audioBoost * 0.5, 0, 1.4);
+
+      this.t += dt * (this.p.speed + audioBoost * 0.6);
+      this.spinAngle += dt * this.p.spin;
+      this.errorFlash = Math.max(0, this.errorFlash - dt * 0.7);
+
+      // pulsos concêntricos periódicos (pensando / executando / falando forte)
+      this._pulseTimer -= dt;
+      if (this._pulseTimer <= 0) {
+        this._pulseTimer = 0.7 + Math.random() * 0.6;
+        if (this.p.waves > 0.4 || audioBoost > 0.35) this.emitPulse(0.6 + this.p.waves * 0.7);
+      }
+
+      // partículas
+      const wantParticles = Math.round(this.p.particles * (reduceMotion ? 40 : 120));
+      if (this.particles.length < wantParticles && Math.random() < 0.7) this._spawnParticle();
+
+      this._draw(energy, dt);
+      requestAnimationFrame(this._frame);
+    }
+
+    _draw(energy, dt) {
+      const ctx = this.ctx;
+
+      // trilha (motion blur) — apaga o frame anterior aos poucos, mantendo
+      // o canvas TRANSPARENTE (sem retângulo de fundo atrás da esfera)
+      ctx.globalCompositeOperation = "destination-out";
+      ctx.fillStyle = "rgba(0,0,0,0.32)";
+      ctx.fillRect(0, 0, this.w, this.h);
+
+      ctx.globalCompositeOperation = "lighter";
+      const cx = this.cx, cy = this.cy;
+      const breath = Math.sin(this.t * this.p.breath) * 0.5 + 0.5;
+      const R = this.baseR * (1 + breath * 0.06 * (0.5 + energy));
+      const sat = this.p.sat;
+      const errTint = this.errorFlash;
+
+      // ---- brilho central ----
+      const glowR = R * (0.55 + energy * 0.7 + breath * 0.12);
+      const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, glowR);
+      let cCore = mix(PALETTE.cyan, PALETTE.ice, 0.3);
+      cCore = mix(cCore, PALETTE.dim, 1 - sat);
+      g.addColorStop(0,   rgba(cCore, 0.9 * this.p.glow));
+      g.addColorStop(0.35, rgba(mix(cCore, PALETTE.blue, 0.5), 0.35 * this.p.glow));
+      g.addColorStop(1,   rgba(PALETTE.blue, 0));
+      ctx.fillStyle = g;
+      ctx.beginPath(); ctx.arc(cx, cy, glowR, 0, Math.PI * 2); ctx.fill();
+
+      // ---- anéis-guia sutis ----
+      ctx.lineWidth = 1;
+      for (let i = 1; i <= 3; i++) {
+        const rr = R * (0.55 + i * 0.22);
+        ctx.strokeStyle = rgba(mix(PALETTE.ice, PALETTE.dim, 1 - sat), 0.05 + 0.03 * Math.sin(this.t + i));
+        ctx.beginPath(); ctx.arc(cx, cy, rr, 0, Math.PI * 2); ctx.stroke();
+      }
+
+      // ---- linhas orgânicas ----
+      const SEG = reduceMotion ? 60 : 96;
+      const deform = this.p.deform * (0.7 + energy * 0.7);
+      for (let li = 0; li < this.LINES; li++) {
+        const c = this.lineCfg[li];
+        const t = this.t * c.speedMul;
+        let col = c.blue ? mix(PALETTE.blue, PALETTE.ice, c.tone * 0.6)
+                         : mix(PALETTE.ice, PALETTE.cyan, c.tone);
+        col = mix(col, PALETTE.dim, 1 - sat);
+        if (errTint > 0) col = mix(col, PALETTE.dim, errTint * 0.7);
+
+        const wobble = c.hot ? 1 + Math.sin(t * 2 + c.phase) * 0.15 : 1;
+        const alpha = c.baseAlpha * (0.35 + energy * 0.9) * wobble;
+
+        // passada larga e fraca (glow barato) só nas linhas "quentes"
+        if (c.hot && !reduceMotion) {
+          ctx.lineWidth = 3.2;
+          ctx.strokeStyle = rgba(col, alpha * 0.14);
+          this._strokeLoop(ctx, cx, cy, R, c, t, deform, SEG);
+        }
+        ctx.lineWidth = c.hot ? 1.3 : 0.8;
+        ctx.strokeStyle = rgba(col, alpha);
+        this._strokeLoop(ctx, cx, cy, R, c, t, deform, SEG);
+      }
+
+      // ---- partículas ----
+      for (let i = this.particles.length - 1; i >= 0; i--) {
+        const pt = this.particles[i];
+        pt.life -= pt.decay + dt * 0.15;
+        if (pt.life <= 0) { this.particles.splice(i, 1); continue; }
+        pt.ang += pt.speed * dt * (0.6 + this.p.spin);
+        // no estado "executing", convergem para 6 pontos-âncora
+        if (this.p.converge > 0.3) {
+          let d = pt.targetAng - pt.ang;
+          d = Math.atan2(Math.sin(d), Math.cos(d));
+          pt.ang += d * dt * 1.6 * this.p.converge;
+          pt.r = lerp(pt.r, this.baseR * 0.5, dt * 1.2 * this.p.converge);
+        } else {
+          pt.r = lerp(pt.r, pt.baseR, dt * 2);
+        }
+        const px = cx + Math.cos(pt.ang + this.spinAngle) * pt.r;
+        const py = cy + Math.sin(pt.ang + this.spinAngle) * pt.r;
+        let pc = mix(PALETTE.ice, PALETTE.cyan, pt.tone);
+        pc = mix(pc, PALETTE.dim, 1 - sat);
+        ctx.fillStyle = rgba(pc, pt.life * 0.8);
+        ctx.beginPath(); ctx.arc(px, py, pt.size * (0.6 + this.p.glow), 0, Math.PI * 2); ctx.fill();
+      }
+
+      // ---- pulsos concêntricos ----
+      for (let i = this.pulses.length - 1; i >= 0; i--) {
+        const pz = this.pulses[i];
+        pz.r += pz.v * dt;
+        pz.a -= dt * 0.55;
+        if (pz.a <= 0) { this.pulses.splice(i, 1); continue; }
+        ctx.lineWidth = 1.4;
+        ctx.strokeStyle = rgba(mix(PALETTE.cyan, PALETTE.ice, 0.4), pz.a * sat);
+        ctx.beginPath(); ctx.arc(cx, cy, pz.r, 0, Math.PI * 2); ctx.stroke();
+      }
+
+      ctx.globalCompositeOperation = "source-over";
+    }
+
+    _strokeLoop(ctx, cx, cy, R, c, t, deform, SEG) {
+      ctx.beginPath();
+      for (let s = 0; s <= SEG; s++) {
+        const a = (s / SEG) * Math.PI * 2;
+        const n =
+          Math.sin(a * c.freqA + t + c.phase) * c.ampA +
+          Math.sin(a * c.freqB - t * 1.3 + c.phase * 2) * c.ampB +
+          Math.sin(a * 2 + t * c.drift) * 0.03;
+        const rr = R * c.radius * (1 + n * deform) + this.audioLevel * 14 * Math.sin(a * 3 + t);
+        const x = cx + Math.cos(a + this.spinAngle * c.speedMul) * rr;
+        const y = cy + Math.sin(a + this.spinAngle * c.speedMul) * rr;
+        s === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+      }
+      ctx.stroke();
+    }
+  }
+
+  /* --------------------------------------------------------------------- */
+  /*  Áudio — mic (listening) e áudio de fala opcional (speaking)          */
+  /* --------------------------------------------------------------------- */
+  const Audio = {
+    ctx: null, micStream: null, micAnalyser: null,
+    voiceNode: null, voiceAnalyser: null, buf: null,
+    raf: null,
+
+    ensureCtx() {
+      if (!this.ctx) this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+      if (this.ctx.state === "suspended") this.ctx.resume();
+      return this.ctx;
+    },
+    _level(analyser) {
+      if (!analyser) return 0;
+      if (!this.buf || this.buf.length !== analyser.fftSize) this.buf = new Uint8Array(analyser.fftSize);
+      analyser.getByteTimeDomainData(this.buf);
+      let sum = 0;
+      for (let i = 0; i < this.buf.length; i++) { const v = (this.buf[i] - 128) / 128; sum += v * v; }
+      return clamp(Math.sqrt(sum / this.buf.length) * 2.6, 0, 1);
+    },
+    async startMic() {
+      // NÃO abrimos o microfone aqui de propósito. Quem controla o microfone é
+      // o backend Python (speech_recognition + PyAudio). Se esta janela também
+      // chamasse getUserMedia({audio:true}), o WebView2 e o PyAudio disputariam
+      // o mesmo endpoint do driver Realtek e um dos dois seria recusado — era a
+      // origem do erro "Audio source must be entered before adjusting".
+      // A animação de "ouvindo" usa um envelope sintético (ver audioLoop()).
+    },
+    stopMic() {
+      if (this.micStream) { this.micStream.getTracks().forEach(t => t.stop()); this.micStream = null; this.micAnalyser = null; }
+    },
+    attach(src) {
+      try {
+        this.ensureCtx();
+        this.detach();
+        if (src instanceof MediaStream) {
+          this.voiceNode = this.ctx.createMediaStreamSource(src);
+        } else if (src instanceof HTMLMediaElement) {
+          this.voiceNode = this.ctx.createMediaElementSource(src);
+          this.voiceNode.connect(this.ctx.destination);
+        } else { return; }
+        this.voiceAnalyser = this.ctx.createAnalyser();
+        this.voiceAnalyser.fftSize = 512;
+        this.voiceNode.connect(this.voiceAnalyser);
+      } catch (e) { console.warn("[Nero] attachAudio falhou.", e); }
+    },
+    detach() {
+      try { this.voiceNode && this.voiceNode.disconnect(); } catch (e) {}
+      this.voiceNode = null; this.voiceAnalyser = null;
+    },
+    micLevel()   { return this._level(this.micAnalyser); },
+    voiceLevel() { return this._level(this.voiceAnalyser); },
+  };
+
+  /* --------------------------------------------------------------------- */
+  /*  Boot da UI                                                           */
+  /* --------------------------------------------------------------------- */
+  const core = new NeroCore(document.getElementById("coreCanvas"));
+  const $ = (id) => document.getElementById(id);
+  const els = {
+    statusText: $("statusText"),
+    transcript: $("transcriptLine"),
+    response:   $("responseLine"),
+    devButtons: document.querySelectorAll(".devpanel button"),
+    micBtn:     $("micBtn"),
+    micHint:    $("micHint"),
+    clock:      $("clock"),
+  };
+
+  let currentState = "idle";
+  let errorTimer = null;
+  let speakingSynth = 0;   // envelope sintético quando não há áudio real
+  let demoTimers = [];
+
+  function fadeIn(el, text) {
+    el.classList.remove("in");
+    el.textContent = text || "";
+    if (!text) return;
+    // força reflow para reiniciar a transição
+    void el.offsetWidth;
+    el.classList.add("in");
+  }
+
+  function setState(state) {
+    if (!STATE_PROFILES[state]) return;
+    currentState = state;
+    document.body.className = `state-${state}`;
+    core.setState(state);
+    els.statusText.textContent = STATE_LABELS[state] || state;
+    els.devButtons.forEach(b => b.classList.toggle("active", b.dataset.state === state));
+
+    if (state === "listening") Audio.startMic(); else Audio.stopMic();
+
+    if (state === "idle") { fadeIn(els.transcript, ""); fadeIn(els.response, ""); }
+
+    if (errorTimer) { clearTimeout(errorTimer); errorTimer = null; }
+    if (state === "error") errorTimer = setTimeout(() => setState("idle"), 2800);
+  }
+
+  function setTranscript(text) { fadeIn(els.transcript, text); }
+  function setResponse(text)   { fadeIn(els.response, text); }
+
+  function setExecuting(label) {
+    setState("executing");
+    if (label) fadeIn(els.response, label);
+  }
+  function setError(message) {
+    setState("error");
+    fadeIn(els.response, message || "Não consegui executar esse comando.");
+  }
+
+  /* loop leve (fora do core) para alimentar nível de áudio e envelope de fala */
+  (function audioLoop() {
+    let level = 0;
+    if (currentState === "listening") {
+      const real = Audio.micLevel();
+      if (real > 0.001) {
+        level = real;
+      } else {
+        // O microfone real pertence ao backend Python; aqui só animamos um
+        // envelope sintético suave para o núcleo "respirar" enquanto ouve.
+        const tt = performance.now() / 1000;
+        const env = (Math.sin(tt * 6.5) * 0.5 + 0.5) * (Math.sin(tt * 1.7) * 0.5 + 0.5);
+        speakingSynth = lerp(speakingSynth, env * (0.25 + Math.random() * 0.35), 0.15);
+        level = speakingSynth;
+      }
+    } else if (currentState === "speaking") {
+      const real = Audio.voiceLevel();
+      if (real > 0.001) {
+        level = real;
+      } else {
+        // envelope sintético: cadência de fala (sobe/desce irregular)
+        const tt = performance.now() / 1000;
+        const env = (Math.sin(tt * 11) * 0.5 + 0.5) * (Math.sin(tt * 2.3) * 0.5 + 0.5);
+        speakingSynth = lerp(speakingSynth, env * (0.5 + Math.random() * 0.5), 0.25);
+        level = speakingSynth;
+      }
+    }
+    core.setAudioLevel(level);
+    requestAnimationFrame(audioLoop);
+  })();
+
+  /* ---------- relógio ---------- */
+  function tickClock() {
+    const n = new Date();
+    els.clock.textContent = `${String(n.getHours()).padStart(2,"0")}:${String(n.getMinutes()).padStart(2,"0")}`;
+  }
+  tickClock(); setInterval(tickClock, 15000);
+
+  /* ---------- painel dev + teclado ---------- */
+  els.devButtons.forEach(btn => btn.addEventListener("click", () => setState(btn.dataset.state)));
+  const KEYMAP = { "1":"idle", "2":"listening", "3":"thinking", "4":"speaking", "5":"executing", "6":"error" };
+  window.addEventListener("keydown", (e) => {
+    if (KEYMAP[e.key]) setState(KEYMAP[e.key]);
+    if (e.key.toLowerCase() === "d") $("devPanel").style.display =
+      ($("devPanel").style.display === "none" ? "flex" : "none");
   });
-  animFrame = requestAnimationFrame(() => {
-    setTimeout(animateBars, 70);
+
+  /* ---------- botão de microfone ---------- */
+  function clearDemo() { demoTimers.forEach(clearTimeout); demoTimers = []; }
+  function runDemo() {
+    clearDemo();
+    setState("listening");
+    setTranscript("");
+    const phrase = "Nero, quais são meus compromissos de hoje?";
+    let i = 0;
+    const typer = setInterval(() => {
+      i++; setTranscript(phrase.slice(0, i));
+      if (i >= phrase.length) clearInterval(typer);
+    }, 45);
+    demoTimers.push(setTimeout(() => setState("thinking"), 2600));
+    demoTimers.push(setTimeout(() => {
+      setState("speaking");
+      setResponse("Você tem três compromissos hoje: reunião às 10h, almoço com o time às 13h e revisão de código às 16h.");
+    }, 4400));
+    demoTimers.push(setTimeout(() => setState("idle"), 9000));
+  }
+  els.micBtn.addEventListener("click", () => {
+    Audio.ensureCtx();
+    if (typeof window.Nero.onMicClick === "function") { window.Nero.onMicClick(); return; }
+    if (currentState === "idle" || currentState === "error") runDemo();
+    else { clearDemo(); setState("idle"); }
   });
-}
-animateBars();
 
-/* relógio simples no canto */
-function tickClock() {
-  const now = new Date();
-  const hh = String(now.getHours()).padStart(2, '0');
-  const mm = String(now.getMinutes()).padStart(2, '0');
-  document.getElementById('clock').textContent = `${hh}:${mm}`;
-}
-tickClock();
-setInterval(tickClock, 1000 * 15);
+  /* =====================================================================
+     API pública para o backend Python (via pywebview.evaluate_js).
+     Compatível com o app.py atual: setState / setTranscript / setResponse.
+     ===================================================================== */
+  window.Nero = {
+    setState,        // 'idle' | 'listening' | 'thinking' | 'speaking' | 'executing' | 'error'
+    setTranscript,   // texto reconhecido do usuário
+    setResponse,     // texto que o Nero respondeu
+    setExecuting,    // ('Abrindo o navegador...') -> estado 'executing' + rótulo
+    setError,        // ('mensagem') -> estado 'error' (volta sozinho pra 'idle')
+    attachAudio:  (src) => Audio.attach(src),   // sincroniza a fala com áudio real (HTMLAudioElement | MediaStream)
+    detachAudio:  ()    => Audio.detach(),
+    emitPulse:    (s)   => core.emitPulse(s || 1),
+    demo:         runDemo,
+    onMicClick:   null,  // defina uma função aqui para o botão do mic acionar seu backend
+    get state()   { return currentState; },
+  };
 
-/* painel de teste manual */
-document.querySelectorAll('.devpanel button').forEach(btn => {
-  btn.addEventListener('click', () => setState(btn.dataset.state));
-});
-
-/* ---------------------------------------------------------
-   API pública exposta para o backend Python controlar a UI.
---------------------------------------------------------- */
-window.Nero = {
-  setState,          // Nero.setState('idle' | 'listening' | 'thinking' | 'speaking')
-  setTranscript,      // Nero.setTranscript('texto que o usuário falou')
-  setResponse          // Nero.setResponse('texto que o Nero respondeu')
-};
+  setState("idle");
+})();
 </script>
 </body>
 </html>
