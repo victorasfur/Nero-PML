@@ -140,12 +140,57 @@ def test_bitcoin(text):
     assert detect_intent(text) == Intent.BITCOIN
 
 
-def test_open_youtube():
-    assert detect_intent("abrir youtube") == Intent.OPEN_YOUTUBE
+@pytest.mark.parametrize("text", [
+    "abrir youtube",
+    "abra o youtube",
+    "abre o youtube",
+    "entre no youtube",
+    "quero assistir alguma coisa no youtube",
+    "quero ver videos no youtube",
+])
+def test_open_youtube(text):
+    assert detect_intent(text) == Intent.OPEN_YOUTUBE
 
 
-def test_youtube_search():
-    assert detect_intent("pesquisar no youtube videos sobre python") == Intent.YOUTUBE_SEARCH
+@pytest.mark.parametrize("text", [
+    "pesquisar no youtube videos sobre python",
+    "procure videos sobre python no youtube",
+    "pesquisa sobre inteligencia artificial no youtube",
+    "quero ver videos sobre python",
+    "quero videos de programacao python",
+    "procure um video ensinando como fazer uma api em python",
+    "pesquise python no youtube",
+    "me mostra videos de treino em casa",
+])
+def test_youtube_search(text):
+    assert detect_intent(text) == Intent.YOUTUBE_SEARCH
+
+
+@pytest.mark.parametrize("text", [
+    "toque evidencias",
+    "toca evidencias no youtube",
+    "quero ouvir evidencias",
+    "coloque evidencias para tocar",
+    "coloque uma musica do bruno mars",
+    "quero ouvir musica sertaneja",
+    "poe uma musica pra tocar",
+    "bota um som ai",
+])
+def test_play_music(text):
+    assert detect_intent(text) == Intent.PLAY_MUSIC
+
+
+@pytest.mark.parametrize("text,expected", [
+    ("abra o navegador", Intent.OPEN_BROWSER),
+    ("abre o navegador de internet", Intent.OPEN_BROWSER),
+    ("abra o google", Intent.OPEN_GOOGLE),
+    ("entra no google", Intent.OPEN_GOOGLE),
+    ("abra o vs code", Intent.OPEN_VSCODE),
+    ("abre o visual studio code", Intent.OPEN_VSCODE),
+    ("abre o editor de codigo", Intent.OPEN_VSCODE),
+])
+def test_open_app(text, expected):
+    assert detect_intent(text) == expected
 
 
 def test_screenshot():
@@ -187,7 +232,19 @@ def test_weather_params_extraction():
 def test_youtube_search_params_extraction():
     match = classify("pesquisar no youtube videos sobre python")
     assert match.intent == Intent.YOUTUBE_SEARCH
-    assert match.params["query"] == "videos sobre python"
+    assert match.params["query"] == "python"
+
+
+def test_play_music_params_extraction():
+    match = classify("toca evidencias no youtube")
+    assert match.intent == Intent.PLAY_MUSIC
+    assert match.params["query"] == "evidencias"
+
+
+def test_youtube_search_query_keeps_multiword_topic():
+    match = classify("procura videos de receita de bolo")
+    assert match.intent == Intent.YOUTUBE_SEARCH
+    assert match.params["query"] == "receita de bolo"
 
 
 # --- diálogo de exemplo (seção 25 do pedido): deve executar direto, sem

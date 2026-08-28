@@ -1,0 +1,233 @@
+{
+  "GET_DATE": {
+    "examples": [
+      "que dia e hoje",
+      "qual o dia de hoje",
+      "qual a data de hoje",
+      "voce sabe que dia e hoje",
+      "voce pode me dizer que dia e hoje",
+      "voce sabe me dizer qual e a data de hoje",
+      "voce pode me dizer a data de hoje",
+      "me fala que dia e hoje",
+      "me fala a data",
+      "me diga a data de hoje",
+      "poderia me informar a data de hoje",
+      "hoje e que dia",
+      "que dia estamos hoje",
+      "em que dia estamos",
+      "pode falar a data de hoje",
+      "me informe o dia de hoje",
+      "qual a data"
+    ]
+  },
+  "GET_TIME": {
+    "examples": [
+      "que horas sao",
+      "qual e a hora",
+      "voce sabe que horas sao",
+      "voce pode me dizer a hora",
+      "voce pode me dizer que horas sao",
+      "me fala as horas",
+      "me fala a hora",
+      "pode me dizer a hora",
+      "que horas temos agora",
+      "me informe o horario",
+      "qual o horario atual",
+      "sabe me dizer a hora atual",
+      "poderia informar o horario",
+      "qual a hora"
+    ]
+  },
+  "ADD_AGENDA": {
+    "examples": [
+      "cadastrar evento na agenda",
+      "adicione um evento na minha agenda",
+      "quero cadastrar um evento",
+      "quero adicionar um compromisso",
+      "quero colocar um compromisso na minha agenda",
+      "quero colocar um evento na agenda",
+      "coloque um evento na agenda",
+      "adiciona isso na minha agenda",
+      "marque um compromisso",
+      "quero marcar um evento",
+      "pode adicionar um evento",
+      "preciso cadastrar um compromisso"
+    ]
+  },
+  "READ_AGENDA": {
+    "examples": [
+      "ler agenda",
+      "leia minha agenda",
+      "quais sao meus eventos",
+      "quais compromissos eu tenho",
+      "o que tenho na agenda",
+      "me mostra minha agenda",
+      "me fale meus compromissos",
+      "quais eventos estao cadastrados",
+      "quero consultar minha agenda",
+      "pode consultar minha agenda",
+      "o que esta marcado para mim"
+    ]
+  },
+  "CLEAR_AGENDA": {
+    "examples": [
+      "limpar agenda",
+      "apague minha agenda",
+      "quero limpar minha agenda",
+      "pode apagar os eventos",
+      "remova todos os eventos",
+      "exclua os eventos da agenda",
+      "quero apagar minha agenda",
+      "delete os compromissos",
+      "remova tudo da agenda"
+    ]
+  },
+  "FACE_RECOGNITION": {
+    "examples": [
+      "reconhecer face",
+      "reconheca meu rosto",
+      "quem sou eu",
+      "voce sabe quem eu sou",
+      "me reconheca",
+      "pode reconhecer meu rosto",
+      "abra a camera e me reconheca",
+      "identificar pessoa",
+      "identifique quem esta na frente"
+    ]
+  },
+  "OPEN_YOUTUBE": {
+    "examples": [
+      "abra o youtube",
+      "abre o youtube",
+      "abrir youtube",
+      "entre no youtube",
+      "entra no youtube",
+      "acesse o youtube",
+      "quero assistir alguma coisa no youtube",
+      "quero ver videos no youtube",
+      "coloca o youtube",
+      "vai pro youtube"
+    ]
+  },
+  "YOUTUBE_SEARCH": {
+    "examples": [
+      "procure videos sobre python no youtube",
+      "pesquisa sobre inteligencia artificial no youtube",
+      "quero videos de programacao python",
+      "procure um video ensinando como fazer uma api em python",
+      "pesquise python no youtube",
+      "quero ver videos sobre python",
+      "procura videos de receita de bolo",
+      "busca no youtube documentario sobre o espaco",
+      "me mostra videos de treino em casa"
+    ]
+  },
+  "PLAY_MUSIC": {
+    "examples": [
+      "toque evidencias",
+      "toca evidencias no youtube",
+      "coloque uma musica do bruno mars",
+      "quero ouvir musica sertaneja",
+      "coloque evidencias do chitaozinho e xororo",
+      "toca uma musica",
+      "poe uma musica pra tocar",
+      "quero escutar uma musica",
+      "bota um som ai",
+      "toca aquela musica que fala eu sei que vou te amar",
+      "coloca pra tocar musica do the beatles"
+    ]
+  },
+  "OPEN_BROWSER": {
+    "examples": [
+      "abra o navegador",
+      "abre o navegador",
+      "abrir o navegador",
+      "abra o chrome",
+      "abre o navegador de internet"
+    ]
+  },
+  "OPEN_GOOGLE": {
+    "examples": [
+      "abra o google",
+      "abre o google",
+      "abrir google",
+      "abra a pesquisa do google",
+      "entra no google"
+    ]
+  },
+  "OPEN_VSCODE": {
+    "examples": [
+      "abra o vs code",
+      "abre o visual studio code",
+      "abrir vscode",
+      "abre o editor de codigo",
+      "inicie o visual studio code"
+    ]
+  },
+  "CALCULATE": {
+    "examples": [
+      "quanto e 10 mais 20",
+      "calcule 8 vezes 7",
+      "quanto da 15 vezes 32",
+      "100 dividido por 5",
+      "quanto e 50 menos 20"
+    ]
+  },
+  "WEATHER": {
+    "examples": [
+      "qual a previsao do tempo",
+      "como esta o tempo",
+      "como esta o clima em sao paulo",
+      "vai chover hoje",
+      "qual a previsao do tempo para o rio de janeiro"
+    ]
+  },
+  "DOLLAR": {
+    "examples": [
+      "qual o valor do dolar",
+      "quanto esta o dolar",
+      "qual a cotacao do dolar hoje"
+    ]
+  },
+  "BITCOIN": {
+    "examples": [
+      "quanto vale um bitcoin",
+      "qual o preco do bitcoin",
+      "quanto esta o bitcoin hoje"
+    ]
+  },
+  "SCREENSHOT": {
+    "examples": [
+      "tire um print da tela",
+      "faca uma captura de tela",
+      "tira um print"
+    ]
+  },
+  "VOLUME_UP": {
+    "examples": [
+      "aumentar o volume",
+      "aumenta o som",
+      "pode aumentar o volume"
+    ]
+  },
+  "VOLUME_DOWN": {
+    "examples": [
+      "diminuir o volume",
+      "abaixa o som",
+      "pode diminuir o volume"
+    ]
+  },
+  "CHAT": {
+    "examples": [
+      "o que e inteligencia artificial",
+      "me explique como funciona um aviao",
+      "quem descobriu o brasil",
+      "qual a diferenca entre python e java",
+      "me conte uma curiosidade sobre o universo",
+      "conte uma piada",
+      "vamos conversar",
+      "voce acha que programacao e dificil",
+      "me faca uma pergunta"
+    ]
+  }
+}

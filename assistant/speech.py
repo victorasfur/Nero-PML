@@ -7,6 +7,9 @@ import edge_tts
 import pygame
 
 from config import settings
+from .speech_sanitizer import sanitize_for_speech
+
+__all__ = ["InputClosed", "SpeechEngine", "sanitize_for_speech"]
 
 
 class InputClosed(Exception):
@@ -163,7 +166,10 @@ class SpeechEngine:
         await communicate.save(output_file)
 
     def speak(self, text: str) -> None:
-        print(f"Nero: {text}")
+        text = sanitize_for_speech(text)
+        if not text:
+            return
+        print(f"[NERO] {text}")
 
         try:
             with tempfile.NamedTemporaryFile(
