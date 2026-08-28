@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nero</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --void: #03060c;
+    --deep: #060c1a;
+    --panel: #0b1424;
+    --panel-line: #16233b;
+    --ice: #57c7ff;
+    --ice-soft: #2f7fb8;
+    --cyan: #8ff0ff;
+    --text-hi: #e7f2fb;
+    --text-mid: #7f93ad;
+    --text-low: #465771;
+    --danger: #ff6b6b;
+  }
+
+  *{ box-sizing:border-box; margin:0; padding:0; }
+
+  html,body{ height:100%; }
+
+  body{
+    background:
+      radial-gradient(ellipse 90% 60% at 50% -10%, #0c1c33 0%, transparent 60%),
+      radial-gradient(ellipse 70% 50% at 85% 100%, #081428 0%, transparent 55%),
+      var(--void);
+    color: var(--text-hi);
+    font-family: 'Inter', sans-serif;
+    min-height:100vh;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:space-between;
+    overflow:hidden;
+    position:relative;
+  }
+
+  /* ---------- textura de fundo ---------- */
+  body::before{
+    content:'';
+    position:fixed; inset:0;
+    background-image:
+      linear-gradient(var(--panel-line) 1px, transparent 1px),
+      linear-gradient(90deg, var(--panel-line) 1px, transparent 1px);
+    background-size: 64px 64px;
+    opacity:.08;
+    pointer-events:none;
+  }
+
+  /* ---------- topo ---------- */
+  .topbar{
+    width:100%;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding: 28px 36px;
+    z-index:2;
+  }
+
+  .wordmark{
+    font-family:'Space Grotesk', sans-serif;
+    font-weight:700;
+    font-size: 20px;
+    letter-spacing: 0.14em;
+    color: var(--text-hi);
+    display:flex;
+    align-items:center;
+    gap:10px;
+  }
+  .wordmark .dot{
+    width:8px; height:8px; border-radius:50%;
+    background: var(--ice);
+    box-shadow: 0 0 10px 2px var(--ice);
+  }
+
+  .clock{
+    font-family:'Space Grotesk', sans-serif;
+    font-size: 13px;
+    letter-spacing: .08em;
+    color: var(--text-mid);
+  }
+
+  /* ---------- núcleo central ---------- */
+  .stage{
+    flex:1;
+    width:100%;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    gap: 40px;
+    z-index:2;
+  }
+
+  .orb-wrap{
+    position:relative;
+    width: 300px;
+    height: 300px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+  }
+
+  .ring{
+    position:absolute;
+    border-radius:50%;
+    border: 1px solid var(--panel-line);
+    opacity:.5;
+  }
+  .ring.r1{ width:100%; height:100%; }
+  .ring.r2{ width:78%; height:78%; }
+  .ring.r3{ width:56%; height:56%; }
+
+  .core{
+    position:relative;
+    width: 148px;
+    height: 148px;
+    border-radius:50%;
+    background:
+      radial-gradient(circle at 35% 30%, var(--cyan) 0%, var(--ice) 35%, var(--ice-soft) 62%, #08213a 100%);
+    box-shadow:
+      0 0 40px 6px rgba(87,199,255,.35),
+      0 0 90px 20px rgba(87,199,255,.12),
+      inset 0 0 30px rgba(0,0,0,.35);
+    animation: breathe 4.2s ease-in-out infinite;
+    transition: filter .4s ease;
+  }
+
+  @keyframes breathe{
+    0%,100%{ transform: scale(1); }
+    50%{ transform: scale(1.05); }
+  }
+
+  /* barras de espectro ao redor do núcleo */
+  .bars{
+    position:absolute;
+    inset:0;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+  }
+  .bar{
+    position:absolute;
+    width: 3px;
+    height: 10px;
+    border-radius: 3px;
+    background: var(--ice);
+    opacity:.55;
+    transform-origin: center 150px;
+    transition: height .18s ease, opacity .3s ease, background .3s ease;
+  }
+
+  /* ---------- estado / legenda ---------- */
+  .status{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:10px;
+    min-height: 70px;
+  }
+
+  .status-label{
+    font-family:'Space Grotesk', sans-serif;
+    font-size: 14px;
+    letter-spacing: .18em;
+    text-transform:uppercase;
+    color: var(--ice);
+    display:flex;
+    align-items:center;
+    gap:10px;
+    transition: color .3s ease;
+  }
+  .status-label .pulse{
+    width:6px; height:6px; border-radius:50%;
+    background: var(--ice);
+    box-shadow: 0 0 8px 2px var(--ice);
+    animation: blink 1.6s ease-in-out infinite;
+  }
+  @keyframes blink{ 0%,100%{opacity:1;} 50%{opacity:.25;} }
+
+  .transcript{
+    max-width: 560px;
+    text-align:center;
+    font-size: 16px;
+    line-height:1.5;
+    color: var(--text-mid);
+    padding: 0 24px;
+    min-height: 24px;
+  }
+  .transcript.response{ color: var(--text-hi); font-weight:500; }
+
+  /* ---------- estados globais via classe no body ---------- */
+
+  body.state-idle .core{ filter: saturate(.75) brightness(.85); }
+  body.state-idle .bar{ opacity:.25; }
+  body.state-idle .status-label{ color: var(--text-mid); }
+  body.state-idle .status-label .pulse{ background: var(--text-mid); box-shadow:none; animation:none; }
+
+  body.state-listening .core{ animation: breathe 1.4s ease-in-out infinite; }
+  body.state-listening .bar{ background: var(--ice); opacity:.9; }
+  body.state-listening .ring{ border-color: var(--ice-soft); }
+
+  body.state-thinking .core{
+    animation: spinPulse 2.2s linear infinite, breathe 2.2s ease-in-out infinite;
+  }
+  body.state-thinking .status-label{ color: var(--cyan); }
+  body.state-thinking .ring.r1{ animation: rotate 6s linear infinite; border-color: var(--ice-soft); }
+  body.state-thinking .ring.r2{ animation: rotate 4s linear infinite reverse; border-color: var(--ice-soft); }
+  @keyframes rotate{ from{ transform: rotate(0deg);} to{ transform: rotate(360deg);} }
+  @keyframes spinPulse{ 0%,100%{ filter:hue-rotate(0deg);} 50%{ filter:hue-rotate(12deg);} }
+
+  body.state-speaking .core{ animation: breathe 0.9s ease-in-out infinite; }
+  body.state-speaking .bar{ background: var(--cyan); opacity:1; }
+  body.state-speaking .status-label{ color: var(--cyan); }
+
+  /* ---------- rodapé / painel de teste ---------- */
+  .devpanel{
+    z-index:2;
+    display:flex;
+    gap:10px;
+    padding: 26px 36px 34px;
+    flex-wrap:wrap;
+    justify-content:center;
+  }
+  .devpanel button{
+    font-family:'Inter', sans-serif;
+    font-size: 12px;
+    letter-spacing:.04em;
+    color: var(--text-mid);
+    background: var(--panel);
+    border: 1px solid var(--panel-line);
+    padding: 9px 16px;
+    border-radius: 999px;
+    cursor:pointer;
+    transition: all .2s ease;
+  }
+  .devpanel button:hover{
+    color: var(--text-hi);
+    border-color: var(--ice-soft);
+    box-shadow: 0 0 12px rgba(87,199,255,.15);
+  }
+  .devpanel button.active{
+    color: var(--void);
+    background: var(--ice);
+    border-color: var(--ice);
+  }
+
+  @media (max-width: 480px){
+    .orb-wrap{ width: 220px; height:220px; }
+    .core{ width: 108px; height:108px; }
+  }
+</style>
+</head>
+<body class="state-idle">
+
+  <div class="topbar">
+    <div class="wordmark"><span class="dot"></span>NERO</div>
+    <div class="clock" id="clock">--:--</div>
+  </div>
+
+  <div class="stage">
+    <div class="orb-wrap" id="orbWrap">
+      <div class="ring r1"></div>
+      <div class="ring r2"></div>
+      <div class="ring r3"></div>
+      <div class="bars" id="bars"></div>
+      <div class="core" id="core"></div>
+    </div>
+
+    <div class="status">
+      <div class="status-label" id="statusLabel"><span class="pulse"></span><span id="statusText">Em espera</span></div>
+      <div class="transcript" id="transcriptText"></div>
+      <div class="transcript response" id="responseText"></div>
+    </div>
+  </div>
+
+  <!-- Painel apenas para teste manual da interface. Pode remover na integração final. -->
+  <div class="devpanel">
+    <button data-state="idle" class="active">Em espera</button>
+    <button data-state="listening">Ouvindo</button>
+    <button data-state="thinking">Pensando</button>
+    <button data-state="speaking">Falando</button>
+  </div>
+
+<script>
+/* ---------------------------------------------------------
+   NERO UI — motor de animação e API de integração
+   Uso a partir do backend Python (via pywebview, eel, ou
+   uma ponte WebSocket): ver instruções no final do arquivo.
+--------------------------------------------------------- */
+
+const BAR_COUNT = 40;
+const barsEl = document.getElementById('bars');
+const bars = [];
+
+for (let i = 0; i < BAR_COUNT; i++) {
+  const bar = document.createElement('div');
+  bar.className = 'bar';
+  const angle = (360 / BAR_COUNT) * i;
+  bar.style.transform = `rotate(${angle}deg) translateY(-150px)`;
+  barsEl.appendChild(bar);
+  bars.push(bar);
+}
+
+const STATE_LABELS = {
+  idle: 'Em espera',
+  listening: 'Ouvindo',
+  thinking: 'Pensando',
+  speaking: 'Nero está falando'
+};
+
+let currentState = 'idle';
+let animFrame = null;
+
+function setState(state) {
+  if (!STATE_LABELS[state]) return;
+  currentState = state;
+  document.body.className = `state-${state}`;
+  document.getElementById('statusText').textContent = STATE_LABELS[state];
+
+  document.querySelectorAll('.devpanel button').forEach(b => {
+    b.classList.toggle('active', b.dataset.state === state);
+  });
+
+  if (state === 'idle') {
+    document.getElementById('transcriptText').textContent = '';
+    document.getElementById('responseText').textContent = '';
+  }
+}
+
+function setTranscript(text) {
+  document.getElementById('transcriptText').textContent = text || '';
+}
+
+function setResponse(text) {
+  document.getElementById('responseText').textContent = text || '';
+}
+
+/* animação das barras — reativa nos estados de escuta/fala,
+   quase parada em espera/pensamento */
+function animateBars() {
+  bars.forEach((bar, i) => {
+    let target = 10;
+    if (currentState === 'listening') {
+      target = 8 + Math.random() * 34;
+    } else if (currentState === 'speaking') {
+      target = 8 + Math.random() * 26;
+    } else if (currentState === 'thinking') {
+      target = 8 + 6 * Math.sin(Date.now() / 300 + i);
+    }
+    bar.style.height = `${target}px`;
+  });
+  animFrame = requestAnimationFrame(() => {
+    setTimeout(animateBars, 70);
+  });
+}
+animateBars();
+
+/* relógio simples no canto */
+function tickClock() {
+  const now = new Date();
+  const hh = String(now.getHours()).padStart(2, '0');
+  const mm = String(now.getMinutes()).padStart(2, '0');
+  document.getElementById('clock').textContent = `${hh}:${mm}`;
+}
+tickClock();
+setInterval(tickClock, 1000 * 15);
+
+/* painel de teste manual */
+document.querySelectorAll('.devpanel button').forEach(btn => {
+  btn.addEventListener('click', () => setState(btn.dataset.state));
+});
+
+/* ---------------------------------------------------------
+   API pública exposta para o backend Python controlar a UI.
+--------------------------------------------------------- */
+window.Nero = {
+  setState,          // Nero.setState('idle' | 'listening' | 'thinking' | 'speaking')
+  setTranscript,      // Nero.setTranscript('texto que o usuário falou')
+  setResponse          // Nero.setResponse('texto que o Nero respondeu')
+};
+</script>
+</body>
+</html>
