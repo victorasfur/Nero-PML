@@ -11,15 +11,19 @@ Se "Nero" e o comando vierem na mesma fala ("Nero, que horas são?"), o
 restante da frase é executado imediatamente após a wake word ser detectada.
 
 WAITING_CONFIRM_INTENT existe porque intent_router.classify() pode ter
-confiança média num palpite (fuzzy matching) — nesse caso o comando NÃO é
-executado direto; a assistente pergunta "você quis dizer X?" e só executa
-depois de uma confirmação explícita (ver commands.dispatch / CONFIDENCE_*).
+confiança média num palpite (fuzzy ou classificação por IA) — nesse caso o
+comando NÃO é executado direto; a assistente pergunta "você quis dizer X?" e
+só executa depois de uma confirmação explícita.
+
+A conversa livre (CHAT) usa self.memory (ConversationMemory): uma janela
+deslizante das últimas mensagens, para a IA resolver "e onde ELE nasceu?".
 """
 
 from colorama import Fore, Style
 from colorama import init as colorama_init
 
 from . import agenda, commands
+from .conversation_memory import ConversationMemory
 from .intents import Intent
 from .speech import InputClosed, SpeechEngine
 from .state_machine import AssistantState, StateMachine
@@ -30,9 +34,11 @@ colorama_init()
 
 
 def print_banner() -> None:
-    print("=" * 48)
-    print("        NERO - ASSISTENTE VIRTUAL")
-    print("=" * 48)
+    print("=" * 52)
+    print("              NERO - ASSISTENTE VIRTUAL")
+    print("=" * 52)
+    ai_status = "IA: Gemini ativo" if settings.GEMINI_ENABLED else "IA: desativada (defina GEMINI_API_KEY no .env)"
+    print(f"  {ai_status}")
     print()
 
 
@@ -41,7 +47,7 @@ def print_status(msg: str) -> None:
 
 
 def print_user(msg: str) -> None:
-    print(f"{Fore.CYAN}Você: {msg}{Style.RESET_ALL}")
+    print(f"{Fore.CYAN}[STT] Você: {msg}{Style.RESET_ALL}")
 
 
 class Assistant:
@@ -49,6 +55,7 @@ class Assistant:
         agenda.ensure_agenda_file()
         self.speech = SpeechEngine(text_mode=text_mode, mic_index=mic_index)
         self.sm = StateMachine()
+        self.memory = ConversationMemory()
         self._pending_match = None
         self._pending_raw_text = None
 
@@ -105,6 +112,7 @@ class Assistant:
             print_status("comando ignorado. Assistente não ativada.")
             return
 
+        print("[PALAVRA DE ATIVAÇÃO] Nero detectada")
         print_status("assistente ativada.")
         raw_remainder = " ".join(raw_text.split()[consumed:]).strip()
         norm_remainder = " ".join(normalized.split()[consumed:]).strip()
@@ -174,13 +182,15 @@ class Assistant:
             match = self._pending_match
             self._pending_match = None
             self._pending_raw_text = None
-            result = commands.execute(match.intent, match.params, normalized, raw_text)
+            result = commands.execute(match.intent, match.params, normalized, raw_text, self.memory)
             self._apply_result(result)
         elif tokens & no_words:
             pending_raw = self._pending_raw_text
             self._pending_match = None
             self._pending_raw_text = None
-            result = commands.execute(Intent.ASK_AI, {}, normalized, pending_raw)
+            # O usuário recusou o palpite: tratamos a fala original como conversa.
+            self.memory.add_user(pending_raw or "")
+            result = commands.execute(Intent.CHAT, {}, normalize_text(pending_raw or ""), pending_raw, self.memory)
             self._apply_result(result)
         else:
             self.speech.speak("Não entendi, pode responder sim ou não?")
@@ -188,15 +198,18 @@ class Assistant:
     # -- utilidades ---------------------------------------------------
 
     def _execute_command(self, normalized: str, raw_text: str) -> None:
-        result = commands.dispatch(normalized, raw_text)
+        self.memory.add_user(raw_text or normalized)
+        result = commands.dispatch(normalized, raw_text, self.memory)
         self._apply_result(result)
 
     def _apply_result(self, result) -> None:
         if result.speak:
             self.speech.speak(result.speak)
+            self.memory.add_assistant(result.speak)
         if result.speak_lines:
             for line in result.speak_lines:
                 self.speech.speak(line)
+            self.memory.add_assistant(" ".join(result.speak_lines))
 
         self._pending_match = result.pending_match
         self._pending_raw_text = result.pending_raw_text
@@ -204,6 +217,7 @@ class Assistant:
 
         status_by_state = {
             AssistantState.WAITING_WAKE_WORD: "aguardando palavra de ativação...",
+            AssistantState.WAITING_COMMAND: "aguardando comando...",
             AssistantState.WAITING_AGENDA_EVENT: "aguardando descrição do evento...",
             AssistantState.WAITING_CONFIRMATION_CLEAR_AGENDA: "aguardando confirmação (sim/não)...",
             AssistantState.WAITING_CONFIRM_INTENT: "aguardando confirmação da intenção (sim/não)...",

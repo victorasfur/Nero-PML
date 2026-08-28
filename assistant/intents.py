@@ -14,7 +14,38 @@ class Intent(Enum):
     BITCOIN = auto()
     OPEN_YOUTUBE = auto()
     YOUTUBE_SEARCH = auto()
+    PLAY_MUSIC = auto()
+    OPEN_BROWSER = auto()
+    OPEN_GOOGLE = auto()
+    OPEN_VSCODE = auto()
     SCREENSHOT = auto()
     VOLUME_UP = auto()
     VOLUME_DOWN = auto()
-    ASK_AI = auto()
+    CHAT = auto()
+
+    # Alias retrocompatível: o nome antigo era ASK_AI.
+    ASK_AI = CHAT
+
+
+# Intenções que a IA tem permissão de classificar. Ações destrutivas ou que
+# mexem em dados do usuário (agenda) NÃO estão aqui de propósito: elas têm
+# cobertura fuzzy boa e, no caso de limpar a agenda, um passo de confirmação
+# falado próprio. A IA jamais decide sozinha executar algo fora desta lista.
+AI_ALLOWED_INTENTS = {
+    Intent.GET_DATE,
+    Intent.GET_TIME,
+    Intent.CALCULATE,
+    Intent.WEATHER,
+    Intent.DOLLAR,
+    Intent.BITCOIN,
+    Intent.OPEN_YOUTUBE,
+    Intent.YOUTUBE_SEARCH,
+    Intent.PLAY_MUSIC,
+    Intent.OPEN_BROWSER,
+    Intent.OPEN_GOOGLE,
+    Intent.OPEN_VSCODE,
+    Intent.SCREENSHOT,
+    Intent.VOLUME_UP,
+    Intent.VOLUME_DOWN,
+    Intent.CHAT,
+}
