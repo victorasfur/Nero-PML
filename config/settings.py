@@ -28,6 +28,16 @@ LISTEN_PHRASE_TIME_LIMIT = 8
 MIC_ENERGY_THRESHOLD_CEILING = 4000
 MIC_ENERGY_THRESHOLD_FALLBACK = 300
 
+# Índice do dispositivo de microfone passado direto para sr.Microphone(device_index=...).
+#   - None  -> usa o microfone padrão do Windows (comportamento normal).
+#   - inteiro -> força um dispositivo específico pelo índice.
+# Em notebooks Lenovo o driver "Grupo de microfones (Realtek(R) Audio)" às vezes
+# não fica como dispositivo padrão, ou exige que o índice do hardware seja dito
+# explicitamente. Nesse caso rode `python main.py --list-mics`, descubra o índice
+# do seu microfone e cole aqui (ex.: MIC_DEVICE_INDEX = 1).
+# A opção de linha de comando --mic-index, quando informada, tem prioridade sobre este valor.
+MIC_DEVICE_INDEX = None
+
 # Segundos sem fala válida em um estado de espera (comando/agenda/confirmação)
 # até reverter automaticamente para WAITING_WAKE_WORD.
 COMMAND_TIMEOUT_SECONDS = 12

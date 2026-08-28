@@ -592,16 +592,12 @@
       return clamp(Math.sqrt(sum / this.buf.length) * 2.6, 0, 1);
     },
     async startMic() {
-      try {
-        this.ensureCtx();
-        if (!this.micStream) {
-          this.micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-          const src = this.ctx.createMediaStreamSource(this.micStream);
-          this.micAnalyser = this.ctx.createAnalyser();
-          this.micAnalyser.fftSize = 512;
-          src.connect(this.micAnalyser);
-        }
-      } catch (e) { console.warn("[Nero] microfone indisponível — usando animação sintética.", e); }
+      // NÃO abrimos o microfone aqui de propósito. Quem controla o microfone é
+      // o backend Python (speech_recognition + PyAudio). Se esta janela também
+      // chamasse getUserMedia({audio:true}), o WebView2 e o PyAudio disputariam
+      // o mesmo endpoint do driver Realtek e um dos dois seria recusado — era a
+      // origem do erro "Audio source must be entered before adjusting".
+      // A animação de "ouvindo" usa um envelope sintético (ver audioLoop()).
     },
     stopMic() {
       if (this.micStream) { this.micStream.getTracks().forEach(t => t.stop()); this.micStream = null; this.micAnalyser = null; }
@@ -690,7 +686,17 @@
   (function audioLoop() {
     let level = 0;
     if (currentState === "listening") {
-      level = Audio.micLevel();
+      const real = Audio.micLevel();
+      if (real > 0.001) {
+        level = real;
+      } else {
+        // O microfone real pertence ao backend Python; aqui só animamos um
+        // envelope sintético suave para o núcleo "respirar" enquanto ouve.
+        const tt = performance.now() / 1000;
+        const env = (Math.sin(tt * 6.5) * 0.5 + 0.5) * (Math.sin(tt * 1.7) * 0.5 + 0.5);
+        speakingSynth = lerp(speakingSynth, env * (0.25 + Math.random() * 0.35), 0.15);
+        level = speakingSynth;
+      }
     } else if (currentState === "speaking") {
       const real = Audio.voiceLevel();
       if (real > 0.001) {
