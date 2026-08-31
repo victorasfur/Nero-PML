@@ -45,8 +45,9 @@ CONFIDENCE_EXECUTE = 0.80
 CONFIDENCE_CONFIRM = 0.60
 
 DISCOURSE_MARKERS = [
-    "sobre", "explique", "explica", "como funciona", "o que e",
-    "conte uma historia", "me conte",
+    "sobre", "explique", "explica", "explicar", "como funciona", "o que e",
+    "o que significa", "conte uma historia", "me conte", "por que", "porque",
+    "para que serve", "qual a diferenca", "qual e a diferenca",
 ]
 
 # Intenções resolvidas por fuzzy matching (as demais são só estruturais).

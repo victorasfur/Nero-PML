@@ -6,6 +6,13 @@ from dotenv import load_dotenv
 BASE_DIR = Path(__file__).resolve().parent.parent
 load_dotenv(BASE_DIR / ".env")
 
+
+def _env_bool(name: str, default: bool) -> bool:
+    val = os.getenv(name)
+    if val is None:
+        return default
+    return val.strip().lower() in ("1", "true", "yes", "on", "sim")
+
 DATA_DIR = BASE_DIR / "data"
 AGENDA_FILE = DATA_DIR / "agenda.txt"
 INTENTS_FILE = DATA_DIR / "intents.json"
@@ -49,26 +56,49 @@ GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "").strip()
 # O nome do modelo do Gemini muda com o tempo (a Google aposenta versões
 # antigas); se a API começar a responder "model ... is no longer available",
 # atualize o valor padrão abaixo ou defina GEMINI_MODEL no .env.
-GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-2.0-flash").strip()
+GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-3.5-flash-lite").strip()
+
+# Tempo máximo (segundos) de espera por uma resposta da API do Gemini antes de
+# desistir. Dois limites separados de propósito:
+#   - CLASSIFY: acontece ANTES de qualquer resposta ao usuário, tem de ser
+#     curto; se estoura, o roteamento simplesmente cai para CHAT.
+#   - CHAT (simples): resposta falada de uma pergunta direta.
+#   - CHAT (complexa): explicações, "por quê", comparações, textos longos —
+#     precisam de mais tempo, senão a IA "falha" ou corta no meio.
+GEMINI_CLASSIFY_TIMEOUT_SECONDS = float(os.getenv("GEMINI_CLASSIFY_TIMEOUT_SECONDS", "4"))
+GEMINI_CHAT_TIMEOUT_SECONDS = float(os.getenv("GEMINI_CHAT_TIMEOUT_SECONDS", "8"))
+GEMINI_CHAT_COMPLEX_TIMEOUT_SECONDS = float(os.getenv("GEMINI_CHAT_COMPLEX_TIMEOUT_SECONDS", "20"))
+
+# Repetições da chamada de conversa quando ela falha por timeout ou por erro
+# transitório da API (429/500/503 etc.). Garante que uma pergunta complexa
+# quase sempre seja respondida. 0 desliga o retry.
+GEMINI_CHAT_RETRIES = int(os.getenv("GEMINI_CHAT_RETRIES", "2"))
+
+# Teto de tokens da resposta falada. Resposta curta = geração mais rápida e
+# menos "divagação"; perguntas complexas ganham um teto maior.
+AI_MAX_OUTPUT_TOKENS = int(os.getenv("AI_MAX_OUTPUT_TOKENS", "160"))
+AI_MAX_OUTPUT_TOKENS_COMPLEX = int(os.getenv("AI_MAX_OUTPUT_TOKENS_COMPLEX", "500"))
 
 # Se False, a assistente funciona 100% offline para os comandos locais e
 # responde educadamente que a conversa por IA não está disponível.
 GEMINI_ENABLED = bool(GEMINI_API_KEY)
 
 # Também usar a IA para CLASSIFICAR pedidos que o roteamento local não
-# resolveu com confiança. Só tem efeito se GEMINI_ENABLED. Desligue para um
-# comportamento totalmente determinístico.
-AI_INTENT_CLASSIFICATION_ENABLED = True
+# resolveu com confiança. Só tem efeito se GEMINI_ENABLED. Desligue (no .env:
+# AI_INTENT_CLASSIFICATION_ENABLED=false) para um comportamento totalmente
+# determinístico e para gastar 1 requisição a menos por pergunta.
+AI_INTENT_CLASSIFICATION_ENABLED = _env_bool("AI_INTENT_CLASSIFICATION_ENABLED", True)
 
 # Instrução de sistema da conversa (a resposta será FALADA em voz alta).
 AI_SYSTEM_PROMPT = (
     "Você é uma assistente virtual chamada Nero. "
     "Responda sempre em português do Brasil. "
-    "Seja natural, clara e objetiva. "
-    "Suas respostas serão faladas em voz alta, então evite respostas longas "
-    "(no máximo 3 ou 4 frases) e não use formatação como markdown, asteriscos, "
-    "listas numeradas longas ou blocos de código. "
-    "Quando precisar enumerar, use no máximo 3 itens curtos. "
+    "Seja natural, clara e direta ao ponto. "
+    "Suas respostas serão faladas em voz alta: para perguntas simples responda "
+    "em 1 ou 2 frases; para perguntas que pedem explicação, no máximo 4 ou 5 "
+    "frases. Nunca use saudações, rodeios ou repita a pergunta. "
+    "Não use formatação (markdown, asteriscos, listas numeradas, blocos de código). "
+    "Quando precisar enumerar, no máximo 3 itens curtos. "
     "Não invente informações; se não souber, diga que não sabe."
 )
 

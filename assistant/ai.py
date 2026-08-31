@@ -17,6 +17,7 @@ todos os comandos locais.
 
 import json
 import re
+import time
 from typing import Dict, List, Optional
 
 from config import settings
@@ -24,6 +25,59 @@ from .intents import AI_ALLOWED_INTENTS
 
 _model = None
 _init_failed = False
+
+
+def _is_timeout(exc: Exception) -> bool:
+    """True se a exceção da API for por estouro de tempo (timeout/deadline)."""
+    name = type(exc).__name__.lower()
+    return "timeout" in name or "deadline" in name
+
+
+def _is_quota_error(exc: Exception) -> bool:
+    """429 por cota/limite de requisições. Repetir NÃO ajuda — só gasta a cota
+    mais rápido; então o retry ignora este caso de propósito."""
+    name = type(exc).__name__.lower()
+    if "resourceexhausted" in name or "toomanyrequests" in name:
+        return True
+    msg = str(exc).lower()
+    return "429" in msg or "quota" in msg or "exceeded your current quota" in msg
+
+
+def _is_transient(exc: Exception) -> bool:
+    """Erros de servidor que costumam passar numa segunda tentativa
+    (500/502/503/504, indisponibilidade momentânea). NÃO inclui 429: cota
+    estourada não melhora com retry."""
+    if _is_quota_error(exc):
+        return False
+    name = type(exc).__name__.lower()
+    if any(k in name for k in ("unavailable", "internalserver", "servererror", "aborted")):
+        return True
+    msg = str(exc)
+    return any(code in msg for code in ("500", "502", "503", "504"))
+
+
+# Marcadores de que a pergunta pede uma EXPLICAÇÃO (mais tempo / mais tokens).
+_COMPLEX_MARKERS = (
+    "explique", "explica", "explicar", "por que", "porque",
+    "como funciona", "como que", "detalhe", "detalha", "compare", "comparar",
+    "diferenca", "diferencas", "resuma", "resumo", "passo a passo",
+    "me conte", "conte sobre", "fale sobre", "o que e", "o que significa",
+    "para que serve", "vantagens", "desvantagens", "pros e contras",
+    "me ajuda a entender", "qual a relacao", "o que voce acha",
+)
+
+
+def _looks_complex(history: List[Dict[str, str]]) -> bool:
+    """Heurística barata: última fala do usuário longa ou com marcador de
+    explicação => trata como pergunta complexa."""
+    last_user = ""
+    for m in reversed(history):
+        if m.get("role") == "user":
+            last_user = (m.get("content") or "").lower()
+            break
+    if len(last_user) >= 120 or len(last_user.split()) >= 18:
+        return True
+    return any(mark in last_user for mark in _COMPLEX_MARKERS)
 
 _INTENT_MENU = """\
 GET_DATE: usuário quer saber a data de hoje
@@ -87,13 +141,58 @@ def ask_chat(history: List[Dict[str, str]]) -> str:
         {"role": ("model" if m["role"] == "assistant" else "user"), "parts": [m["content"]]}
         for m in history
     ]
-    try:
-        response = model.generate_content(contents)
-        text = (getattr(response, "text", "") or "").strip()
-        return text or "Desculpe, não consegui pensar em uma resposta agora."
-    except Exception as e:  # noqa: BLE001
-        print(f"[ERRO] Falha ao consultar a IA generativa: {e}")
+
+    complex_q = _looks_complex(history)
+    max_tokens = (
+        settings.AI_MAX_OUTPUT_TOKENS_COMPLEX if complex_q else settings.AI_MAX_OUTPUT_TOKENS
+    )
+    timeout = (
+        settings.GEMINI_CHAT_COMPLEX_TIMEOUT_SECONDS if complex_q
+        else settings.GEMINI_CHAT_TIMEOUT_SECONDS
+    )
+    hard_cap = settings.GEMINI_CHAT_COMPLEX_TIMEOUT_SECONDS * 2
+    attempts = 1 + max(0, settings.GEMINI_CHAT_RETRIES)
+    if complex_q:
+        print(f"[IA] pergunta complexa: timeout {timeout:.0f}s, até {attempts} tentativas.")
+
+    last_exc: Optional[Exception] = None
+    for attempt in range(1, attempts + 1):
+        try:
+            response = model.generate_content(
+                contents,
+                generation_config={"temperature": 0.4, "max_output_tokens": max_tokens},
+                request_options={"timeout": timeout},
+            )
+            text = (getattr(response, "text", "") or "").strip()
+            if text:
+                return text
+            last_exc = None  # resposta vazia: tenta de novo se ainda houver tentativa
+        except Exception as e:  # noqa: BLE001
+            last_exc = e
+            if _is_quota_error(e):
+                # Cota da API estourada: repetir só piora. Aborta já.
+                print(f"[ERRO] Cota da API do Gemini esgotada: {e}")
+                return (
+                    "A cota diária da inteligência artificial foi atingida. "
+                    "Tente de novo mais tarde ou troque o modelo no arquivo .env."
+                )
+            retriable = _is_timeout(e) or _is_transient(e)
+            print(
+                f"[IA] tentativa {attempt}/{attempts} falhou "
+                f"({'timeout' if _is_timeout(e) else e})."
+            )
+            if attempt < attempts and retriable:
+                timeout = min(timeout * 1.5, hard_cap)
+                time.sleep(0.6 * attempt)
+                continue
+            break
+
+    if last_exc is not None and _is_timeout(last_exc):
+        return "Demorei demais para responder essa. Pode repetir a pergunta?"
+    if last_exc is not None:
+        print(f"[ERRO] Falha ao consultar a IA generativa: {last_exc}")
         return "Desculpe, não consegui obter uma resposta da inteligência artificial agora."
+    return "Desculpe, não consegui pensar em uma resposta agora."
 
 
 def ask_ai(question: str) -> str:
@@ -155,11 +254,19 @@ def classify_intent(text: str, history: Optional[List[Dict[str, str]]] = None) -
     try:
         response = model.generate_content(
             prompt,
-            generation_config={"temperature": 0.0, "response_mime_type": "application/json"},
+            generation_config={
+                "temperature": 0.0,
+                "response_mime_type": "application/json",
+                "max_output_tokens": 120,
+            },
+            request_options={"timeout": settings.GEMINI_CLASSIFY_TIMEOUT_SECONDS},
         )
         data = _extract_json(getattr(response, "text", "") or "")
     except Exception as e:  # noqa: BLE001
-        print(f"[ERRO] Falha na classificação por IA: {e}")
+        if _is_timeout(e):
+            print("[AVISO] Classificação por IA excedeu o tempo limite; seguindo para CHAT.")
+        else:
+            print(f"[ERRO] Falha na classificação por IA: {e}")
         return None
 
     if not isinstance(data, dict) or "intent" not in data:
