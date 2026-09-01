@@ -14,6 +14,7 @@ execute() roda um Intent já determinado — usado por dispatch() e pelo loop
 principal quando o usuário confirma um "você quis dizer X?".
 """
 
+import random
 from dataclasses import dataclass
 from typing import Callable, Dict, List, Optional
 
@@ -39,6 +40,10 @@ class CommandResult:
     # e, se o usuário confirmar, chama execute(pending_match.intent, ...).
     pending_match: Optional[IntentMatch] = None
     pending_raw_text: Optional[str] = None
+    # True só para o comando de encerrar: fala a despedida normalmente e o
+    # loop principal (assistant.py) sai depois de falar, sem precisar de
+    # exceção nem estado novo na máquina de estados.
+    shutdown: bool = False
 
 
 # --- handlers -----------------------------------------------------------
@@ -90,6 +95,13 @@ def handle_calculate(params, normalized, raw, memory) -> CommandResult:
 
 def handle_face_recognition(params, normalized, raw, memory) -> CommandResult:
     return CommandResult(speak=face_recognition.recognize_face())
+
+
+def handle_register_face(params, normalized, raw, memory) -> CommandResult:
+    return CommandResult(
+        speak="Qual o nome da pessoa que eu devo cadastrar?",
+        next_state=AssistantState.WAITING_FACE_NAME,
+    )
 
 
 def handle_weather(params, normalized, raw, memory) -> CommandResult:
@@ -184,6 +196,25 @@ def handle_volume_down(params, normalized, raw, memory) -> CommandResult:
     return CommandResult(speak=speak)
 
 
+def handle_easter_egg_corinthians(params, normalized, raw, memory) -> CommandResult:
+    return CommandResult(speak="Vai Corinthians!!!")
+
+
+_JOKES = [
+    "Por que a aranha é o animal mais carente do mundo? Porque ela é um arac need you.",
+    "Por que o pinheiro não se perde na floresta? Porque ele tem uma pinha.",
+    "O que o cavalo foi fazer no orelhão? Passar um trote!",
+]
+
+
+def handle_easter_egg_joke(params, normalized, raw, memory) -> CommandResult:
+    return CommandResult(speak=random.choice(_JOKES))
+
+
+def handle_shutdown(params, normalized, raw, memory) -> CommandResult:
+    return CommandResult(speak="Até mais!", shutdown=True)
+
+
 def handle_chat(params, normalized, raw, memory) -> CommandResult:
     if memory is not None and len(memory) > 0:
         history = memory.history()
@@ -203,6 +234,7 @@ COMMAND_REGISTRY: Dict[Intent, Callable] = {
     Intent.CLEAR_AGENDA: handle_clear_agenda,
     Intent.CALCULATE: handle_calculate,
     Intent.FACE_RECOGNITION: handle_face_recognition,
+    Intent.REGISTER_FACE: handle_register_face,
     Intent.WEATHER: handle_weather,
     Intent.DOLLAR: handle_dollar,
     Intent.BITCOIN: handle_bitcoin,
@@ -215,6 +247,9 @@ COMMAND_REGISTRY: Dict[Intent, Callable] = {
     Intent.SCREENSHOT: handle_screenshot,
     Intent.VOLUME_UP: handle_volume_up,
     Intent.VOLUME_DOWN: handle_volume_down,
+    Intent.EASTER_EGG_CORINTHIANS: handle_easter_egg_corinthians,
+    Intent.EASTER_EGG_JOKE: handle_easter_egg_joke,
+    Intent.SHUTDOWN: handle_shutdown,
     Intent.CHAT: handle_chat,
 }
 

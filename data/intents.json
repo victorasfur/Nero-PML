@@ -60,12 +60,22 @@
       "leia minha agenda",
       "quais sao meus eventos",
       "quais compromissos eu tenho",
+      "quais sao meus compromissos de hoje",
+      "quais sao os compromissos da minha agenda",
       "o que tenho na agenda",
+      "o que tem na minha agenda hoje",
+      "o que esta marcado na minha agenda",
       "me mostra minha agenda",
+      "mostra a minha agenda",
       "me fale meus compromissos",
+      "me diga os meus eventos",
       "quais eventos estao cadastrados",
+      "liste os eventos da minha agenda",
       "quero consultar minha agenda",
       "pode consultar minha agenda",
+      "verifica minha agenda pra mim",
+      "tenho algum compromisso marcado",
+      "tem alguma coisa marcada na minha agenda",
       "o que esta marcado para mim"
     ]
   },
@@ -93,6 +103,22 @@
       "abra a camera e me reconheca",
       "identificar pessoa",
       "identifique quem esta na frente"
+    ]
+  },
+  "REGISTER_FACE": {
+    "examples": [
+      "cadastrar meu rosto",
+      "cadastre minha face",
+      "quero cadastrar meu rosto",
+      "quero cadastrar uma nova pessoa no reconhecimento facial",
+      "registre meu rosto",
+      "adicionar uma pessoa ao reconhecimento facial",
+      "cadastrar o rosto de uma pessoa nova",
+      "aprenda o meu rosto",
+      "guarde meu rosto no sistema",
+      "quero me cadastrar no reconhecimento facial",
+      "cadastre um novo rosto no sistema",
+      "cadastrar uma nova face"
     ]
   },
   "OPEN_YOUTUBE": {
@@ -224,7 +250,6 @@
       "quem descobriu o brasil",
       "qual a diferenca entre python e java",
       "me conte uma curiosidade sobre o universo",
-      "conte uma piada",
       "vamos conversar",
       "voce acha que programacao e dificil",
       "me faca uma pergunta"

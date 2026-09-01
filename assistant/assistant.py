@@ -19,8 +19,12 @@ A conversa livre (CHAT) usa self.memory (ConversationMemory): uma janela
 deslizante das últimas mensagens, para a IA resolver "e onde ELE nasceu?".
 """
 
+import os
+
 from colorama import Fore, Style
 from colorama import init as colorama_init
+
+from vision import capture_faces as capture_faces_module
 
 from . import agenda, commands
 from .conversation_memory import ConversationMemory
@@ -58,6 +62,7 @@ class Assistant:
         self.memory = ConversationMemory()
         self._pending_match = None
         self._pending_raw_text = None
+        self._shutdown_requested = False
 
     def run(self) -> None:
         print_banner()
@@ -72,6 +77,16 @@ class Assistant:
             except InputClosed as e:
                 print_status(f"encerrando assistente ({e}). Até logo!")
                 break
+            if self._shutdown_requested:
+                print_status("encerrando assistente (comando de voz).")
+                # os._exit em vez de break/return: no app.py (GUI) este loop
+                # roda numa thread de fundo — parar só ela deixaria a janela
+                # do pywebview aberta e "morta" (thread principal só cuida do
+                # webview.start()). os._exit mata o PROCESSO inteiro, de
+                # qualquer thread, fechando a janela junto. Seguro aqui: o
+                # "Até mais!" já terminou de tocar (speak() é bloqueante) e
+                # não há nada para salvar antes de sair.
+                os._exit(0)
 
     # -- ciclo principal ---------------------------------------------------
 
@@ -95,6 +110,8 @@ class Assistant:
             self._handle_waiting_command(raw_text, normalized)
         elif state == AssistantState.WAITING_AGENDA_EVENT:
             self._handle_agenda_event(raw_text, normalized)
+        elif state == AssistantState.WAITING_FACE_NAME:
+            self._handle_face_name(raw_text, normalized)
         elif state == AssistantState.WAITING_CONFIRMATION_CLEAR_AGENDA:
             self._handle_clear_agenda_confirmation(raw_text, normalized)
         elif state == AssistantState.WAITING_CONFIRM_INTENT:
@@ -144,6 +161,27 @@ class Assistant:
             return
         agenda.add_event(raw_text.strip())
         self.speech.speak("Evento cadastrado com sucesso.")
+        self.sm.transition(AssistantState.WAITING_WAKE_WORD)
+        print_status("aguardando palavra de ativação...")
+
+    def _handle_face_name(self, raw_text: str, normalized: str) -> None:
+        print_user(raw_text)
+        if normalized == "cancelar":
+            self._cancel("Operação cancelada.")
+            return
+        name = raw_text.strip()
+        if not name:
+            self.speech.speak("Desculpe, não consegui entender. Qual o nome da pessoa?")
+            return
+
+        self.speech.speak(f"Ok, olhe para a câmera. Vou capturar algumas fotos de {name}.")
+        saved = capture_faces_module.capture_faces(name)
+        if saved > 0:
+            self.speech.speak(f"Cadastro concluído. Salvei {saved} fotos de {name}.")
+        else:
+            self.speech.speak(
+                "Não consegui cadastrar o rosto. Verifique se a câmera está disponível e tente de novo."
+            )
         self.sm.transition(AssistantState.WAITING_WAKE_WORD)
         print_status("aguardando palavra de ativação...")
 
@@ -211,6 +249,12 @@ class Assistant:
                 self.speech.speak(line)
             self.memory.add_assistant(" ".join(result.speak_lines))
 
+        self._shutdown_requested = result.shutdown
+        if result.shutdown:
+            # Já falou a despedida; run() encerra o loop logo em seguida —
+            # não há por que trocar de estado nem imprimir status novo.
+            return
+
         self._pending_match = result.pending_match
         self._pending_raw_text = result.pending_raw_text
         self.sm.transition(result.next_state)
@@ -219,6 +263,7 @@ class Assistant:
             AssistantState.WAITING_WAKE_WORD: "aguardando palavra de ativação...",
             AssistantState.WAITING_COMMAND: "aguardando comando...",
             AssistantState.WAITING_AGENDA_EVENT: "aguardando descrição do evento...",
+            AssistantState.WAITING_FACE_NAME: "aguardando o nome da pessoa a cadastrar...",
             AssistantState.WAITING_CONFIRMATION_CLEAR_AGENDA: "aguardando confirmação (sim/não)...",
             AssistantState.WAITING_CONFIRM_INTENT: "aguardando confirmação da intenção (sim/não)...",
         }

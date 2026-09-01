@@ -32,3 +32,8 @@ python-dotenv==1.0.1
 
 # Testes.
 pytest==8.3.3
+
+# OPCIONAL: SSL/TLS certificate verification para redes corporativas (requer Python >=3.10).
+# Para ambientes com proxy corporativo, Zscaler ou antivirus com inspeção de TLS,
+# faça upgrade para Python 3.10+ e instale: pip install truststore
+# truststore==0.10.4
