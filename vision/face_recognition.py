@@ -6,6 +6,7 @@ sem compilação, 100% offline, e suficiente para um dataset pequeno em condiç�
 controladas de demonstração.
 """
 
+import threading
 from pathlib import Path
 from typing import Dict, Optional, Tuple
 
@@ -13,6 +14,7 @@ import cv2
 import numpy as np
 
 from config import settings
+from .camera import open_camera
 
 FACE_SIZE = (200, 200)
 
@@ -84,7 +86,7 @@ def recognize_face() -> str:
 
     cap = None
     try:
-        cap = cv2.VideoCapture(0, cv2.CAP_DSHOW)
+        cap = open_camera(0)
         if not cap.isOpened():
             return "Câmera não disponível."
 
@@ -116,4 +118,10 @@ def recognize_face() -> str:
     finally:
         if cap is not None:
             cap.release()
-        cv2.destroyAllWindows()
+        # cv2.destroyAllWindows() usa o backend nativo de janelas (Cocoa no
+        # macOS) e só pode ser chamado na thread principal — no app.py (GUI
+        # com pywebview) o Assistant roda numa thread de fundo, e chamar
+        # essa função lá derruba a thread com uma exceção nativa do C++,
+        # mesmo sem nenhuma janela ter sido aberta.
+        if threading.current_thread() is threading.main_thread():
+            cv2.destroyAllWindows()

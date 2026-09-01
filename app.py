@@ -27,10 +27,25 @@ Instale a dependência que falta:
 import json
 import threading
 
+# Precisa rodar ANTES de qualquer import que crie um contexto SSL (edge-tts,
+# requests, speech_recognition etc.): faz a verificacao de certificado usar o
+# repositorio de confianca do sistema operacional em vez do bundle do
+# certifi, para funcionar em redes com inspecao de TLS (proxy corporativo,
+# Zscaler etc.).
+try:
+    import truststore
+    truststore.inject_into_ssl()
+except ImportError:
+    # truststore requer Python >= 3.10; em redes corporativas com inspecao de TLS,
+    # instale: pip install truststore (requer upgrade para Python 3.10+)
+    pass
+
 import webview  # pip install pywebview
 
 from assistant.assistant import Assistant
 from assistant import commands as commands_module
+from vision import capture_faces as capture_faces_module
+from vision import face_recognition as face_recognition_module
 
 
 # ---------------------------------------------------------------------------
@@ -101,6 +116,33 @@ def conectar_ui(assistant: Assistant, window: webview.Window) -> None:
 
     commands_module.dispatch = dispatch_com_ui
     commands_module.execute = execute_com_ui
+
+    # --- câmera: vision.face_recognition.recognize_face() /
+    # vision.capture_faces.capture_faces() ---------------------------------
+    # Ambas fazem chamadas de câmera bloqueantes que podem levar alguns
+    # segundos; ligamos o estado "camera" (indicador vermelho na UI) para
+    # deixar claro que a webcam está ativa nesse intervalo, já que rodando
+    # via GUI não há mais a prévia nativa do OpenCV (ver vision/camera.py e
+    # o guard de thread principal em capture_faces.py / face_recognition.py).
+    original_recognize_face = face_recognition_module.recognize_face
+
+    def recognize_face_com_ui(*args, **kwargs):
+        ui_set_state(window, "camera")
+        resultado = original_recognize_face(*args, **kwargs)
+        ui_set_state(window, "idle")
+        return resultado
+
+    face_recognition_module.recognize_face = recognize_face_com_ui
+
+    original_capture_faces = capture_faces_module.capture_faces
+
+    def capture_faces_com_ui(*args, **kwargs):
+        ui_set_state(window, "camera")
+        resultado = original_capture_faces(*args, **kwargs)
+        ui_set_state(window, "idle")
+        return resultado
+
+    capture_faces_module.capture_faces = capture_faces_com_ui
 
 
 # ---------------------------------------------------------------------------

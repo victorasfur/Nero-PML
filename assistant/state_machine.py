@@ -6,6 +6,7 @@ class AssistantState(Enum):
     WAITING_WAKE_WORD = auto()
     WAITING_COMMAND = auto()
     WAITING_AGENDA_EVENT = auto()
+    WAITING_FACE_NAME = auto()
     WAITING_CONFIRMATION_CLEAR_AGENDA = auto()
     WAITING_CONFIRM_INTENT = auto()
 

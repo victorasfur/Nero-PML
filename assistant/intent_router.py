@@ -49,11 +49,15 @@ DISCOURSE_MARKERS = [
     "o que significa", "conte uma historia", "me conte", "por que", "porque",
     "para que serve", "qual a diferenca", "qual e a diferenca",
 ]
+# \b nas duas pontas: sem isso, "o que e" (sem acento = "o que é") também
+# batia em qualquer "o que e<palavra>" — "o que EU tenho", "o que ESTA
+# marcado", "o que ELE fez" — porque são só prefixos que começam com "e".
+_DISCOURSE_RE = re.compile(r"\b(?:" + "|".join(re.escape(m) for m in DISCOURSE_MARKERS) + r")\b")
 
 # Intenções resolvidas por fuzzy matching (as demais são só estruturais).
 FUZZY_INTENTS = {
     Intent.GET_DATE, Intent.GET_TIME, Intent.ADD_AGENDA, Intent.READ_AGENDA,
-    Intent.CLEAR_AGENDA, Intent.FACE_RECOGNITION, Intent.YOUTUBE_SEARCH,
+    Intent.CLEAR_AGENDA, Intent.FACE_RECOGNITION, Intent.REGISTER_FACE, Intent.YOUTUBE_SEARCH,
     Intent.PLAY_MUSIC, Intent.OPEN_YOUTUBE, Intent.OPEN_BROWSER,
     Intent.OPEN_GOOGLE, Intent.OPEN_VSCODE, Intent.CHAT,
 }
@@ -88,6 +92,7 @@ INTENT_DESCRIPTIONS: Dict[Intent, str] = {
     Intent.READ_AGENDA: "ler sua agenda",
     Intent.CLEAR_AGENDA: "limpar sua agenda",
     Intent.FACE_RECOGNITION: "fazer o reconhecimento facial",
+    Intent.REGISTER_FACE: "cadastrar um novo rosto",
     Intent.YOUTUBE_SEARCH: "pesquisar vídeos no YouTube",
     Intent.PLAY_MUSIC: "tocar uma música no YouTube",
     Intent.OPEN_YOUTUBE: "abrir o YouTube",
@@ -205,6 +210,15 @@ def _structural_match(text: str) -> Optional[IntentMatch]:
          lambda m: {}),
         (Intent.VOLUME_UP, re.compile(r"(aumentar|aumenta|sobe|subir)( o)? (volume|som)"), lambda m: {}),
         (Intent.VOLUME_DOWN, re.compile(r"(diminuir|diminui|abaixa|abaixar|baixa)( o)? (volume|som)"), lambda m: {}),
+        (Intent.EASTER_EGG_CORINTHIANS, re.compile(r"\b(vai|vamos)\s+corinthians\b"), lambda m: {}),
+        # .{0,15} entre o verbo e "piada(s)": cobre "conte uma piada", "me
+        # conta uma piada", "sabe alguma piada" sem virar um "contém a
+        # palavra piada em algum lugar da frase" solto demais.
+        (Intent.EASTER_EGG_JOKE, re.compile(r"\b(conte|conta|fala|fale|sabe)\b.{0,15}\bpiadas?\b"), lambda m: {}),
+        # (?!\s+tarde): "ate mais" sozinho é despedida, mas "ate mais TARDE"
+        # é só uma referência de tempo ("eu volto ate mais tarde") — não deve
+        # encerrar a assistente.
+        (Intent.SHUTDOWN, re.compile(r"\bate mais\b(?!\s+tarde)|\bate logo\b|\btchau\b"), lambda m: {}),
     ]
     for intent, pattern, extract_params in patterns:
         m = pattern.search(text)
@@ -307,7 +321,7 @@ def classify(normalized_text: str, raw_text: Optional[str] = None, history=None,
         _fill_params(structural, normalized_text)
         return structural
 
-    if any(marker in normalized_text for marker in DISCOURSE_MARKERS):
+    if _DISCOURSE_RE.search(normalized_text):
         return IntentMatch(Intent.CHAT, 1.0, {}, source="discourse")
 
     best_intent, best_score = _best_fuzzy_match(normalized_text)

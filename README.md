@@ -115,6 +115,12 @@ disponível, a aplicação avisa e continua — use `python main.py --text-mode`
 
 ## 8. Cadastro das faces (reconhecimento facial)
 
+Por voz (com a assistente rodando): diga "Nero, cadastrar meu rosto", informe
+o nome quando ela perguntar (sem precisar repetir "Nero") e olhe para a
+câmera até ela terminar.
+
+Ou direto pelo terminal, sem precisar da assistente rodando:
+
 ```powershell
 python -m vision.capture_faces "Victor"
 ```
@@ -161,6 +167,7 @@ formas de pedir a mesma coisa. Exemplos vivem em `data/intents.json`.
 | `CLEAR_AGENDA` | "limpar agenda", "apague minha agenda" | Pede confirmação (sim/não) e esvazia `agenda.txt` |
 | `CALCULATE` | "quanto é 25 vezes 8", "10 mais 20", "cem dividido por 4" | 4 operações (dígitos, símbolos ou por extenso) |
 | `FACE_RECOGNITION` | "quem sou eu", "reconheça meu rosto" | Abre a webcam e identifica a pessoa |
+| `REGISTER_FACE` | "cadastrar meu rosto", "cadastre minha face" | Pergunta o nome da pessoa (a resposta seguinte NÃO precisa da wake word) e salva 20 fotos em `vision/dataset/<nome>/` |
 | `WEATHER` | "previsão do tempo para São Paulo", "vai chover" | Consulta o clima (Open-Meteo) |
 | `DOLLAR` / `BITCOIN` | "quanto está o dólar", "qual o preço do bitcoin" | Consulta a cotação (AwesomeAPI) |
 | `OPEN_YOUTUBE` | "abra o YouTube", "entre no YouTube", "quero assistir algo no YouTube" | Abre o YouTube no navegador |
@@ -171,6 +178,9 @@ formas de pedir a mesma coisa. Exemplos vivem em `data/intents.json`.
 | `OPEN_VSCODE` | "abra o VS Code", "abre o editor de código" | Abre o VS Code (caminho fixo do allowlist) |
 | `SCREENSHOT` | "tire um print da tela" | Salva um screenshot com data/hora no nome |
 | `VOLUME_UP` / `VOLUME_DOWN` | "aumenta o som", "diminui o volume" | Ajusta o volume do sistema |
+| `EASTER_EGG_CORINTHIANS` | "vai Corinthians", "vamos Corinthians" | Easter egg: responde "Vai Corinthians!!!" |
+| `EASTER_EGG_JOKE` | "conte uma piada", "sabe alguma piada" | Easter egg: fala uma piada aleatória de uma lista fixa |
+| `SHUTDOWN` | "até mais", "tchau", "até logo" | Responde "Até mais!" e encerra a assistente |
 | — | "cancelar" (em qualquer pergunta pendente) | Cancela a operação em andamento |
 | `CHAT` | qualquer outra pergunta ("o que é uma API", "conte uma piada") | Conversa com o Gemini, com memória de contexto |
 

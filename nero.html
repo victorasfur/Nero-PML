@@ -197,6 +197,9 @@
   }
   body.state-listening .mic::after{ animation: micRing 1.6s ease-out infinite; }
   @keyframes micRing{ 0%{ opacity:.6; transform:scale(1);} 100%{ opacity:0; transform:scale(1.7);} }
+
+  /* estado "camera": mesmo sinal universal de webcam ativa (ponto vermelho) */
+  body.state-camera .status-label{ color: var(--danger); }
   .voice .hint{ font-size:11px; letter-spacing:.24em; text-transform:uppercase; color: var(--text-low); }
 
   /* ---------- painel de teste (dev) ---------- */
@@ -285,6 +288,7 @@
     <button data-state="thinking">Pensando</button>
     <button data-state="speaking">Falando</button>
     <button data-state="executing">Executando</button>
+    <button data-state="camera">Câmera</button>
     <button data-state="error">Erro</button>
   </div>
 
@@ -322,6 +326,7 @@
     thinking:  { energy:.74, speed:1.05, deform:1.0, glow:.82, breath:1.9, spin:.55, particles:.9,  sat:1,   waves:.7, converge:0 },
     speaking:  { energy:.6,  speed:.72, deform:.86, glow:.92, breath:2.3, spin:.16, particles:.7,  sat:1,   waves:1,  converge:0 },
     executing: { energy:.56, speed:.9,  deform:.66, glow:.78, breath:1.7, spin:1.15, particles:.85, sat:1,   waves:.5, converge:1 },
+    camera:    { energy:.5,  speed:.4,  deform:.6,  glow:.75, breath:1.4, spin:.05, particles:.5,  sat:1,   waves:.4, converge:0 },
     error:     { energy:.2,  speed:.35, deform:.55, glow:.4,  breath:1.1, spin:.06, particles:.2,  sat:.25, waves:0,  converge:0 },
   };
 
@@ -331,6 +336,7 @@
     thinking:  "Pensando",
     speaking:  "Nero está falando",
     executing: "Executando",
+    camera:    "Usando a câmera",
     error:     "Erro",
   };
 
@@ -722,7 +728,7 @@
 
   /* ---------- painel dev + teclado ---------- */
   els.devButtons.forEach(btn => btn.addEventListener("click", () => setState(btn.dataset.state)));
-  const KEYMAP = { "1":"idle", "2":"listening", "3":"thinking", "4":"speaking", "5":"executing", "6":"error" };
+  const KEYMAP = { "1":"idle", "2":"listening", "3":"thinking", "4":"speaking", "5":"executing", "6":"camera", "7":"error" };
   window.addEventListener("keydown", (e) => {
     if (KEYMAP[e.key]) setState(KEYMAP[e.key]);
     if (e.key.toLowerCase() === "d") $("devPanel").style.display =
@@ -760,7 +766,7 @@
      Compatível com o app.py atual: setState / setTranscript / setResponse.
      ===================================================================== */
   window.Nero = {
-    setState,        // 'idle' | 'listening' | 'thinking' | 'speaking' | 'executing' | 'error'
+    setState,        // 'idle' | 'listening' | 'thinking' | 'speaking' | 'executing' | 'camera' | 'error'
     setTranscript,   // texto reconhecido do usuário
     setResponse,     // texto que o Nero respondeu
     setExecuting,    // ('Abrindo o navegador...') -> estado 'executing' + rótulo

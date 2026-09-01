@@ -107,7 +107,16 @@ def _ensure_model():
     try:
         import google.generativeai as genai
 
-        genai.configure(api_key=settings.GEMINI_API_KEY)
+        # transport="rest": o transporte padrão (gRPC) faz a própria
+        # verificação de TLS fora do módulo ssl do Python (nem o truststore
+        # em main.py/app.py alcança) e exige negociação ALPN estrita, que
+        # proxies corporativos de inspecao de TLS (Zscaler etc.) costumam
+        # quebrar mesmo com o certificado do proxy instalado no sistema —
+        # trava em "Handshake failed... CERTIFICATE_VERIFY_FAILED" ou,
+        # depois de resolvido, em "missing selected ALPN property". REST usa
+        # o mesmo caminho HTTPS comum (requests/ssl) que já funciona nessas
+        # redes.
+        genai.configure(api_key=settings.GEMINI_API_KEY, transport="rest")
         _model = genai.GenerativeModel(
             settings.GEMINI_MODEL,
             system_instruction=settings.AI_SYSTEM_PROMPT,

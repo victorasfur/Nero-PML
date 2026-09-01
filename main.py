@@ -1,5 +1,18 @@
 import argparse
 
+# Precisa rodar ANTES de qualquer import que crie um contexto SSL (edge-tts,
+# requests, speech_recognition etc.): faz a verificacao de certificado usar o
+# repositorio de confianca do sistema operacional em vez do bundle do
+# certifi, para funcionar em redes com inspecao de TLS (proxy corporativo,
+# Zscaler etc.).
+try:
+    import truststore
+    truststore.inject_into_ssl()
+except ImportError:
+    # truststore requer Python >= 3.10; em redes corporativas com inspecao de TLS,
+    # instale: pip install truststore (requer upgrade para Python 3.10+)
+    pass
+
 from assistant.assistant import Assistant
 
 

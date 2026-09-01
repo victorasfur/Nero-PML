@@ -65,12 +65,22 @@ def test_add_agenda(text):
     "leia minha agenda",
     "quais sao meus eventos",
     "quais compromissos eu tenho",
+    "quais sao meus compromissos de hoje",
+    "quais sao os compromissos da minha agenda",
     "o que tenho na agenda",
+    "o que tem na minha agenda hoje",
+    "o que esta marcado na minha agenda",
+    "o que esta marcado para mim",
     "me mostra minha agenda",
+    "mostra a agenda",
     "me fale meus compromissos",
+    "me diz os eventos",
     "quais eventos estao cadastrados",
     "quero consultar minha agenda",
     "pode consultar minha agenda",
+    "verifica minha agenda",
+    "tenho algum compromisso",
+    "tem alguma coisa marcada na minha agenda",
 ])
 def test_read_agenda(text):
     assert detect_intent(text) == Intent.READ_AGENDA
@@ -119,6 +129,20 @@ def test_calculate(text):
 ])
 def test_face_recognition(text):
     assert detect_intent(text) == Intent.FACE_RECOGNITION
+
+
+@pytest.mark.parametrize("text", [
+    "cadastrar meu rosto",
+    "cadastre minha face",
+    "quero cadastrar meu rosto",
+    "registre meu rosto",
+    "adicionar uma pessoa ao reconhecimento facial",
+    "aprenda o meu rosto",
+    "guarde meu rosto no sistema",
+    "cadastre um novo rosto no sistema",
+])
+def test_register_face(text):
+    assert detect_intent(text) == Intent.REGISTER_FACE
 
 
 @pytest.mark.parametrize("text", [
@@ -206,6 +230,50 @@ def test_volume_down():
 
 
 @pytest.mark.parametrize("text", [
+    "vai corinthians",
+    "vamos corinthians",
+    "Vai, Corinthians!!",
+    "nero vai corinthians",
+])
+def test_easter_egg_corinthians(text):
+    assert detect_intent(text) == Intent.EASTER_EGG_CORINTHIANS
+
+
+@pytest.mark.parametrize("text", [
+    "conte uma piada",
+    "conta uma piada",
+    "me conte uma piada",
+    "sabe alguma piada",
+    "voce sabe uma piada",
+    "nero conte uma piada",
+    "fala uma piada ai",
+])
+def test_easter_egg_joke(text):
+    assert detect_intent(text) == Intent.EASTER_EGG_JOKE
+
+
+def test_easter_egg_joke_does_not_false_positive_on_unrelated_conte_requests():
+    assert detect_intent("me conte uma curiosidade sobre o universo") != Intent.EASTER_EGG_JOKE
+    assert detect_intent("conte uma historia sobre um dia na vida de um programador") != Intent.EASTER_EGG_JOKE
+
+
+@pytest.mark.parametrize("text", [
+    "ate mais",
+    "tchau",
+    "ate logo",
+    "nero ate mais",
+    "Até mais, Nero!",
+])
+def test_shutdown(text):
+    assert detect_intent(text) == Intent.SHUTDOWN
+
+
+def test_shutdown_does_not_false_positive_on_ate_mais_tarde():
+    assert detect_intent("ate mais tarde eu volto") != Intent.SHUTDOWN
+    assert detect_intent("te vejo ate mais tarde") != Intent.SHUTDOWN
+
+
+@pytest.mark.parametrize("text", [
     "explique o que e inteligencia artificial",
     "o que e inteligencia artificial",
     "me explique inteligencia artificial",
@@ -275,3 +343,28 @@ def test_false_positive_explaining_agenda_is_not_read_agenda():
 
 def test_false_positive_talking_about_face_recognition_does_not_trigger_it():
     assert detect_intent("fale sobre reconhecimento facial") != Intent.FACE_RECOGNITION
+
+
+# --- guard de discurso: "o que e" precisa respeitar fronteira de palavra ---
+# Sem \b, "o que e" (== "o que é" sem acento) também batia em qualquer
+# "o que e<palavra>" que começasse com "e" ("eu", "esta", "ele", "essa"...),
+# empurrando essas frases pra CHAT antes mesmo do fuzzy matching rodar.
+
+@pytest.mark.parametrize("text", [
+    "o que esta marcado para mim",
+    "o que esta marcado na minha agenda",
+])
+def test_discourse_guard_does_not_false_positive_on_o_que_esta(text):
+    assert detect_intent(text) == Intent.READ_AGENDA
+
+
+def test_discourse_guard_still_catches_real_o_que_e_questions():
+    assert detect_intent("o que e inteligencia artificial") == Intent.CHAT
+
+
+def test_register_face_not_confused_with_add_agenda():
+    assert detect_intent("cadastrar meu rosto") != Intent.ADD_AGENDA
+
+
+def test_register_face_not_confused_with_face_recognition():
+    assert detect_intent("cadastre minha face") != Intent.FACE_RECOGNITION

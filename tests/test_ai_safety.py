@@ -36,7 +36,7 @@ def test_ai_cannot_pick_an_intent_outside_the_allowlist(force_ai):
 
 
 def test_destructive_intents_are_not_ai_classifiable():
-    for name in ("CLEAR_AGENDA", "ADD_AGENDA", "READ_AGENDA", "FACE_RECOGNITION"):
+    for name in ("CLEAR_AGENDA", "ADD_AGENDA", "READ_AGENDA", "FACE_RECOGNITION", "REGISTER_FACE", "SHUTDOWN"):
         assert Intent[name] not in AI_ALLOWED_INTENTS
 
 
